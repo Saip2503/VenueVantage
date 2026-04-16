@@ -260,16 +260,28 @@ class _OrderScreenState extends State<OrderScreen> {
     );
   }
 
+  bool _isProcessing = false;
+
   // ── Cart Overlay (Glass) ───────────────────────────────────────────────────
   Widget _buildCartOverlay(BuildContext context, String? uid) {
     return _CartOverlay(
+      isProcessing: _isProcessing,
       onClose: () => setState(() => _showCart = false),
-      onCheckout: () {
-        context.read<AppState>().placeOrder(uid);
-        setState(() {
-          _showCart = false;
-          _orderPlaced = true;
-        });
+      onCheckout: () async {
+        setState(() => _isProcessing = true);
+        try {
+          await context.read<AppState>().placeOrder(uid);
+          if (mounted) {
+            setState(() {
+              _isProcessing = false;
+              _showCart = false;
+              _orderPlaced = true;
+            });
+          }
+        } catch (e) {
+          if (mounted) setState(() => _isProcessing = false);
+          debugPrint("UI Checkout Error: $e");
+        }
       },
     );
   }
@@ -524,8 +536,13 @@ class _MenuItemCard extends StatelessWidget {
 class _CartOverlay extends StatelessWidget {
   final VoidCallback onClose;
   final VoidCallback onCheckout;
+  final bool isProcessing;
 
-  const _CartOverlay({required this.onClose, required this.onCheckout});
+  const _CartOverlay({
+    required this.onClose,
+    required this.onCheckout,
+    this.isProcessing = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -680,15 +697,26 @@ class _CartOverlay extends StatelessWidget {
                                   borderRadius:
                                       BorderRadius.all(Radius.circular(4)),
                                 ),
-                                child: Text(
-                                  'Place Order – \$${state.cartTotal.toStringAsFixed(2)}',
-                                  textAlign: TextAlign.center,
-                                  style: GoogleFonts.inter(
-                                    color: AppTheme.onPrimary,
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 15,
-                                  ),
-                                ),
+                                child: isProcessing
+                                    ? const Center(
+                                        child: SizedBox(
+                                          width: 20,
+                                          height: 20,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            color: AppTheme.onPrimary,
+                                          ),
+                                        ),
+                                      )
+                                    : Text(
+                                        'Place Order – \$${state.cartTotal.toStringAsFixed(2)}',
+                                        textAlign: TextAlign.center,
+                                        style: GoogleFonts.inter(
+                                          color: AppTheme.onPrimary,
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 15,
+                                        ),
+                                      ),
                               ),
                             ),
                           ),

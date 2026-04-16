@@ -282,7 +282,8 @@ class AppState extends ChangeNotifier {
       try {
         final fsId = await _fs.placeOrder(uid, _cart, cartTotal);
         orderId = fsId;
-      } catch (_) {
+      } catch (e) {
+        debugPrint("Order Checkout Error: $e");
         // Fall through with local ID
       }
     }

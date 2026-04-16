@@ -170,22 +170,36 @@ class FirestoreService {
     return _db.collection('users').doc(uid).collection('orders')
         .orderBy('placedAt', descending: true)
         .snapshots()
-        .map((snap) => snap.docs.map((d) => _docToOrder(d)).toList());
+        .map((snap) {
+          return snap.docs.map((d) {
+            try {
+              return _docToOrder(d);
+            } catch (e) {
+              debugPrint("Error converting order ${d.id}: $e");
+              return null;
+            }
+          }).whereType<OrderModel>().toList();
+        });
   }
 
   OrderModel _docToOrder(QueryDocumentSnapshot<Map<String, dynamic>> d) {
     final data = d.data();
     final itemsList = (data['items'] as List? ?? []);
+    
+    // Ensure we handle potential nulls or type mismatches from Firestore
     return OrderModel(
       id: d.id,
-      total: (data['total'] as num?)?.toDouble() ?? 0,
-      status: data['status'] ?? 'pending',
+      total: (data['total'] as num?)?.toDouble() ?? 0.0,
+      status: data['status']?.toString() ?? 'placed',
       time: (data['placedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
-      items: itemsList.map((i) => OrderItem(
-        name: i['name'] ?? '',
-        emoji: i['emoji'] ?? '🍴',
-        quantity: i['quantity'] ?? 1,
-      )).toList(),
+      items: itemsList.map((i) {
+        final itemMap = i as Map<String, dynamic>;
+        return OrderItem(
+          name: itemMap['name']?.toString() ?? 'Item',
+          emoji: itemMap['emoji']?.toString() ?? '🍴',
+          quantity: (itemMap['quantity'] as num?)?.toInt() ?? 1,
+        );
+      }).toList(),
     );
   }
 
