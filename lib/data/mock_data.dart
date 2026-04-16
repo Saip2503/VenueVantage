@@ -50,10 +50,10 @@ const List<String> kCrowdTrendLabels = ['-30m', '-24m', '-18m', '-12m', '-6m', '
 
 // ── Section crowd breakdown ───────────────────────────────────────────────────
 const List<Map<String, dynamic>> kSectionData = [
-  {'section': '104', 'crowd': 95.0, 'color': 0xFFEF4444}, // High (Red)
-  {'section': '105', 'crowd': 90.0, 'color': 0xFFEF4444}, // High (Red)
-  {'section': '106', 'crowd': 30.0, 'color': 0xFF10B981}, // Low (Green)
-  {'section': '202T', 'crowd': 60.0, 'color': 0xFFF59E0B}, // Top-Med (Amber)
-  {'section': '202R', 'crowd': 55.0, 'color': 0xFFF59E0B}, // Right-Med (Amber)
-  {'section': '202B', 'crowd': 25.0, 'color': 0xFF10B981}, // Bottom-Low (Green)
+  {'section': '104', 'crowd': 92.0, 'color': 0xFFEF4444}, // Red Glow (Bottom-Left)
+  {'section': '202T', 'crowd': 65.0, 'color': 0xFFF59E0B}, // Amber Glow (Top-Right)
+  {'section': '203R', 'crowd': 58.0, 'color': 0xFFF59E0B}, // Amber Glow (Right)
+  {'section': '106B', 'crowd': 22.0, 'color': 0xFF10B981}, // Green Glow (Bottom)
+  {'section': '202B', 'crowd': 18.0, 'color': 0xFF10B981}, // Green Glow (Bottom-Right)
+  {'section': '101L', 'crowd': 40.0, 'color': 0xFF3B82F6}, // Standard (Blue)
 ];

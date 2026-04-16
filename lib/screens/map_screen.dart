@@ -578,6 +578,19 @@ class _StadiumPainter extends CustomPainter {
       ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
     canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), bgPaint);
 
+    // 1b. Technical Grid
+    final gridPaint = Paint()
+      ..color = Colors.white.withOpacity(0.04)
+      ..strokeWidth = 0.5;
+    
+    const double gridSize = 40;
+    for (double x = 0; x <= size.width; x += gridSize) {
+      canvas.drawLine(Offset(x, 0), Offset(x, size.height), gridPaint);
+    }
+    for (double y = 0; y <= size.height; y += gridSize) {
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), gridPaint);
+    }
+
     // 2. Concentric Rings (Stadium Bowl)
     final ringPaint = Paint()
       ..style = PaintingStyle.stroke
