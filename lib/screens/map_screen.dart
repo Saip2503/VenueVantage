@@ -18,12 +18,36 @@ class _MapScreenState extends State<MapScreen> {
   POIType? _filterType;
 
   static const Map<POIType, _POIStyle> _styles = {
-    POIType.food: _POIStyle(icon: Icons.fastfood_rounded, color: Color(0xFFF59E0B), label: 'Food'),
-    POIType.restroom: _POIStyle(icon: Icons.wc_rounded, color: Color(0xFF3B82F6), label: 'Restroom'),
-    POIType.merch: _POIStyle(icon: Icons.shopping_bag_rounded, color: Color(0xFF8B5CF6), label: 'Merch'),
-    POIType.exit: _POIStyle(icon: Icons.exit_to_app_rounded, color: Color(0xFF10B981), label: 'Exit'),
-    POIType.medical: _POIStyle(icon: Icons.local_hospital_rounded, color: Color(0xFFEF4444), label: 'Medical'),
-    POIType.parking: _POIStyle(icon: Icons.local_parking_rounded, color: Color(0xFF06B6D4), label: 'Parking'),
+    POIType.food: _POIStyle(
+      icon: Icons.fastfood_rounded,
+      color: Color(0xFFF59E0B),
+      label: 'Food',
+    ),
+    POIType.restroom: _POIStyle(
+      icon: Icons.wc_rounded,
+      color: Color(0xFF3B82F6),
+      label: 'Restroom',
+    ),
+    POIType.merch: _POIStyle(
+      icon: Icons.shopping_bag_rounded,
+      color: Color(0xFF8B5CF6),
+      label: 'Merch',
+    ),
+    POIType.exit: _POIStyle(
+      icon: Icons.exit_to_app_rounded,
+      color: Color(0xFF10B981),
+      label: 'Exit',
+    ),
+    POIType.medical: _POIStyle(
+      icon: Icons.local_hospital_rounded,
+      color: Color(0xFFEF4444),
+      label: 'Medical',
+    ),
+    POIType.parking: _POIStyle(
+      icon: Icons.local_parking_rounded,
+      color: Color(0xFF06B6D4),
+      label: 'Parking',
+    ),
   };
 
   @override
@@ -106,7 +130,9 @@ class _MapScreenState extends State<MapScreen> {
           final type = types[i];
           final label = type == null ? 'All' : _styles[type]!.label;
           final isSelected = _filterType == type;
-          final color = type == null ? AppTheme.accentBlue : _styles[type]!.color;
+          final color = type == null
+              ? AppTheme.accentBlue
+              : _styles[type]!.color;
 
           return Padding(
             padding: const EdgeInsets.only(right: 8),
@@ -115,9 +141,14 @@ class _MapScreenState extends State<MapScreen> {
               child: GestureDetector(
                 onTap: () => setState(() => _filterType = type),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 7,
+                  ),
                   decoration: BoxDecoration(
-                    color: isSelected ? color.withOpacity(0.2) : AppTheme.bgCard,
+                    color: isSelected
+                        ? color.withOpacity(0.2)
+                        : AppTheme.bgCard,
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
                       color: isSelected ? color : AppTheme.borderColor,
@@ -127,7 +158,9 @@ class _MapScreenState extends State<MapScreen> {
                     label,
                     style: GoogleFonts.inter(
                       fontSize: 12,
-                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                      fontWeight: isSelected
+                          ? FontWeight.w600
+                          : FontWeight.w400,
                       color: isSelected ? color : AppTheme.textMuted,
                     ),
                   ),
@@ -145,7 +178,9 @@ class _MapScreenState extends State<MapScreen> {
       builder: (ctx, state, _) {
         final pois = _filterType == null
             ? state.pointsOfInterest
-            : state.pointsOfInterest.where((p) => p.type == _filterType).toList();
+            : state.pointsOfInterest
+                  .where((p) => p.type == _filterType)
+                  .toList();
 
         return Padding(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
@@ -196,9 +231,14 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   Widget _buildStadiumBackground(BoxConstraints constraints) {
-    return CustomPaint(
-      size: Size(constraints.maxWidth, constraints.maxHeight),
-      painter: _StadiumPainter(),
+    return Container(
+      color: const Color(0xFF0a0e1a),
+      child: Image.asset(
+        'images/stadium_map.png',
+        fit: BoxFit.contain,
+        filterQuality: FilterQuality.high,
+        isAntiAlias: true,
+      ),
     );
   }
 
@@ -212,8 +252,8 @@ class _MapScreenState extends State<MapScreen> {
         final crowdColor = poi.crowdLevel > 65
             ? AppTheme.accentRed
             : poi.crowdLevel > 35
-                ? AppTheme.accentAmber
-                : AppTheme.accentGreen;
+            ? AppTheme.accentAmber
+            : AppTheme.accentGreen;
 
         return Positioned(
           bottom: 24,
@@ -228,7 +268,9 @@ class _MapScreenState extends State<MapScreen> {
               decoration: BoxDecoration(
                 color: Colors.white.withOpacity(0.05),
                 borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: const Color(0xFF424754).withOpacity(0.15)),
+                border: Border.all(
+                  color: const Color(0xFF424754).withOpacity(0.15),
+                ),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withOpacity(0.2),
@@ -256,129 +298,148 @@ class _MapScreenState extends State<MapScreen> {
                           ),
                         ),
                         const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: style.color.withOpacity(0.15),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Icon(style.icon, color: style.color, size: 22),
-                      ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                        Row(
                           children: [
-                            Text(
-                              poi.name,
-                              style: GoogleFonts.inter(
-                                color: AppTheme.textPrimary,
-                                fontWeight: FontWeight.w700,
-                                fontSize: 15,
+                            Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: style.color.withOpacity(0.15),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Icon(
+                                style.icon,
+                                color: style.color,
+                                size: 22,
                               ),
                             ),
-                            Text(
-                              style.label,
-                              style: GoogleFonts.inter(
-                                color: style.color,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    poi.name,
+                                    style: GoogleFonts.inter(
+                                      color: AppTheme.textPrimary,
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 15,
+                                    ),
+                                  ),
+                                  Text(
+                                    style.label,
+                                    style: GoogleFonts.inter(
+                                      color: style.color,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            GestureDetector(
+                              onTap: () => state.selectPOI(null),
+                              child: Container(
+                                padding: const EdgeInsets.all(6),
+                                decoration: BoxDecoration(
+                                  color: AppTheme.bgSurface,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Icon(
+                                  Icons.close_rounded,
+                                  color: AppTheme.textMuted,
+                                  size: 16,
+                                ),
                               ),
                             ),
                           ],
                         ),
-                      ),
-                      GestureDetector(
-                        onTap: () => state.selectPOI(null),
-                        child: Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: BoxDecoration(
-                            color: AppTheme.bgSurface,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Icon(Icons.close_rounded,
-                              color: AppTheme.textMuted, size: 16),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 14),
-                  Row(
-                    children: [
-                      _POIStatChip(
-                        label: 'Wait Time',
-                        value: poi.waitTime,
-                        icon: Icons.timer_rounded,
-                        color: AppTheme.accentBlue,
-                      ),
-                      const SizedBox(width: 10),
-                      _POIStatChip(
-                        label: 'Crowd Level',
-                        value: '${poi.crowdLevel}%',
-                        icon: Icons.people_rounded,
-                        color: crowdColor,
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: ElevatedButton.icon(
-                          onPressed: () {},
-                          icon: const Icon(Icons.navigation_rounded, size: 14),
-                          label: Text(
-                            'Navigate',
-                            style: GoogleFonts.inter(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
+                        const SizedBox(height: 14),
+                        Row(
+                          children: [
+                            _POIStatChip(
+                              label: 'Wait Time',
+                              value: poi.waitTime,
+                              icon: Icons.timer_rounded,
+                              color: AppTheme.accentBlue,
                             ),
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: style.color,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 10),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
+                            const SizedBox(width: 10),
+                            _POIStatChip(
+                              label: 'Crowd Level',
+                              value: '${poi.crowdLevel}%',
+                              icon: Icons.people_rounded,
+                              color: crowdColor,
                             ),
-                          ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: ElevatedButton.icon(
+                                onPressed: () {},
+                                icon: const Icon(
+                                  Icons.navigation_rounded,
+                                  size: 14,
+                                ),
+                                label: Text(
+                                  'Navigate',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: style.color,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 10,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  // Crowd bar
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text('Crowd Density',
-                              style: GoogleFonts.inter(
-                                  color: AppTheme.textMuted, fontSize: 11)),
-                          Text('${poi.crowdLevel}%',
-                              style: GoogleFonts.inter(
-                                  color: crowdColor,
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600)),
-                        ],
-                      ),
-                      const SizedBox(height: 5),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(4),
-                        child: LinearProgressIndicator(
-                          value: poi.crowdLevel / 100,
-                          minHeight: 6,
-                          backgroundColor: AppTheme.bgSurface,
-                          valueColor: AlwaysStoppedAnimation(crowdColor),
+                        const SizedBox(height: 10),
+                        // Crowd bar
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  'Crowd Density',
+                                  style: GoogleFonts.inter(
+                                    color: AppTheme.textMuted,
+                                    fontSize: 11,
+                                  ),
+                                ),
+                                Text(
+                                  '${poi.crowdLevel}%',
+                                  style: GoogleFonts.inter(
+                                    color: crowdColor,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 5),
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(4),
+                              child: LinearProgressIndicator(
+                                value: poi.crowdLevel / 100,
+                                minHeight: 6,
+                                backgroundColor: AppTheme.bgSurface,
+                                valueColor: AlwaysStoppedAnimation(crowdColor),
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ],
+                ),
               ),
-            ),
-            ),
-            ),
             ),
           ),
         );
@@ -413,17 +474,23 @@ class _POIStatChip extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(label,
-                style: GoogleFonts.inter(
-                    color: AppTheme.textMuted,
-                    fontSize: 9,
-                    fontWeight: FontWeight.w500)),
+            Text(
+              label,
+              style: GoogleFonts.inter(
+                color: AppTheme.textMuted,
+                fontSize: 9,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
             const SizedBox(height: 2),
-            Text(value,
-                style: GoogleFonts.inter(
-                    color: color,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700)),
+            Text(
+              value,
+              style: GoogleFonts.inter(
+                color: color,
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
           ],
         ),
       ),
@@ -460,9 +527,10 @@ class _POIMarkerState extends State<_POIMarker>
       vsync: this,
       duration: const Duration(milliseconds: 600),
     )..repeat(reverse: true);
-    _scaleAnim = Tween(begin: 0.9, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
+    _scaleAnim = Tween(
+      begin: 0.9,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
   }
 
   @override
@@ -477,7 +545,7 @@ class _POIMarkerState extends State<_POIMarker>
       if (widget.poi.crowdLevel > 35) return const Color(0xFFfbbf24); // Amber
       return const Color(0xFF4ade80); // Green
     }
-    
+
     return GestureDetector(
       onTap: widget.onTap,
       child: AnimatedContainer(
@@ -494,14 +562,15 @@ class _POIMarkerState extends State<_POIMarker>
               spreadRadius: widget.isSelected ? 6 : 2,
             ),
           ],
-          border: Border.all(
-            color: getGlowColor().withOpacity(0.3),
-            width: 2,
-          ),
+          border: Border.all(color: getGlowColor().withOpacity(0.3), width: 2),
         ),
         child: BackdropFilter(
           filter: _getBlurFilter(),
-          child: Icon(widget.style.icon, color: getGlowColor(), size: widget.isSelected ? 24 : 20),
+          child: Icon(
+            widget.style.icon,
+            color: getGlowColor(),
+            size: widget.isSelected ? 24 : 20,
+          ),
         ),
       ),
     );
@@ -509,7 +578,6 @@ class _POIMarkerState extends State<_POIMarker>
 }
 
 ui.ImageFilter _getBlurFilter() => ui.ImageFilter.blur(sigmaX: 16, sigmaY: 16);
-
 
 class _YouAreHereMarker extends StatefulWidget {
   @override
@@ -528,9 +596,10 @@ class _YouAreHereMarkerState extends State<_YouAreHereMarker>
       vsync: this,
       duration: const Duration(milliseconds: 1200),
     )..repeat(reverse: true);
-    _pulse = Tween(begin: 0.7, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
+    _pulse = Tween(
+      begin: 0.7,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
   }
 
   @override
@@ -563,94 +632,13 @@ class _YouAreHereMarkerState extends State<_YouAreHereMarker>
   }
 }
 
-class _StadiumPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-    
-    // 1. Deep Background Glow
-    final bgPaint = Paint()
-      ..shader = RadialGradient(
-        colors: [
-          const Color(0xFF1E293B).withOpacity(0.8),
-          const Color(0xFF0F172A),
-        ],
-      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
-    canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), bgPaint);
-
-    // 1b. Technical Grid
-    final gridPaint = Paint()
-      ..color = Colors.white.withOpacity(0.04)
-      ..strokeWidth = 0.5;
-    
-    const double gridSize = 40;
-    for (double x = 0; x <= size.width; x += gridSize) {
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), gridPaint);
-    }
-    for (double y = 0; y <= size.height; y += gridSize) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), gridPaint);
-    }
-
-    // 2. Concentric Rings (Stadium Bowl)
-    final ringPaint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.2
-      ..color = const Color(0xFF334155).withOpacity(0.4);
-
-    canvas.drawCircle(center, size.width * 0.45, ringPaint); // Outer Outer
-    canvas.drawCircle(center, size.width * 0.38, ringPaint..strokeWidth = 2); // Main Perimeter
-    canvas.drawCircle(center, size.width * 0.30, ringPaint..strokeWidth = 1); // Mid Ring
-    canvas.drawCircle(center, size.width * 0.22, ringPaint); // Inner Ring
-
-    // 3. Radial Section Lines (The "Slices")
-    final linePaint = Paint()
-      ..color = const Color(0xFF334155).withOpacity(0.2)
-      ..strokeWidth = 1;
-
-    for (int i = 0; i < 16; i++) {
-      final angle = (i * 22.5) * (3.14159 / 180);
-      final start = Offset(
-        center.dx + (size.width * 0.22) * ui.Math.cos(angle),
-        center.dy + (size.width * 0.22) * ui.Math.sin(angle),
-      );
-      final end = Offset(
-        center.dx + (size.width * 0.45) * ui.Math.cos(angle),
-        center.dy + (size.width * 0.45) * ui.Math.sin(angle),
-      );
-      canvas.drawLine(start, end, linePaint);
-    }
-
-    // 4. Playing Field (The Pitch)
-    final fieldRect = Rect.fromCenter(
-      center: center,
-      width: size.width * 0.35,
-      height: size.height * 0.32,
-    );
-    
-    // Field fill
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(fieldRect, const Radius.circular(4)),
-      Paint()..color = const Color(0xFF064E3B).withOpacity(0.5),
-    );
-    
-    // Field lines
-    final fieldLinePaint = Paint()
-      ..color = const Color(0xFF10B981).withOpacity(0.3)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1;
-    
-    canvas.drawRRect(RRect.fromRectAndRadius(fieldRect, const Radius.circular(4)), fieldLinePaint);
-    canvas.drawCircle(center, size.width * 0.06, fieldLinePaint);
-    canvas.drawLine(Offset(center.dx, fieldRect.top), Offset(center.dx, fieldRect.bottom), fieldLinePaint);
-  }
-
-  @override
-  bool shouldRepaint(_) => false;
-}
-
 class _POIStyle {
   final IconData icon;
   final Color color;
   final String label;
-  const _POIStyle({required this.icon, required this.color, required this.label});
+  const _POIStyle({
+    required this.icon,
+    required this.color,
+    required this.label,
+  });
 }
