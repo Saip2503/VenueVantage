@@ -2,20 +2,34 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../data/mock_data.dart';
+import '../services/firestore_service.dart';
 
 // ── Models ────────────────────────────────────────────────────────────────────
 
 class MenuItem {
   final String id, name, description, emoji, category;
   final double price;
-  const MenuItem({required this.id, required this.name, required this.description, required this.price, required this.emoji, required this.category});
+  const MenuItem({
+    required this.id,
+    required this.name,
+    required this.description,
+    required this.price,
+    required this.emoji,
+    required this.category,
+  });
 }
 
 class CartItem {
   final String id, name, emoji;
   final double price;
   int quantity;
-  CartItem({required this.id, required this.name, required this.price, required this.quantity, required this.emoji});
+  CartItem({
+    required this.id,
+    required this.name,
+    required this.price,
+    required this.quantity,
+    required this.emoji,
+  });
 }
 
 class Alert {
@@ -23,7 +37,14 @@ class Alert {
   final AlertType type;
   final DateTime time;
   bool isRead;
-  Alert({required this.id, required this.title, required this.body, required this.type, required this.time, this.isRead = false});
+  Alert({
+    required this.id,
+    required this.title,
+    required this.body,
+    required this.type,
+    required this.time,
+    this.isRead = false,
+  });
 }
 
 enum AlertType { info, warning, urgent, success }
@@ -33,7 +54,15 @@ class PointOfInterest {
   final POIType type;
   final double x, y;
   final int crowdLevel;
-  const PointOfInterest({required this.id, required this.name, required this.type, required this.x, required this.y, required this.crowdLevel, required this.waitTime});
+  const PointOfInterest({
+    required this.id,
+    required this.name,
+    required this.type,
+    required this.x,
+    required this.y,
+    required this.crowdLevel,
+    required this.waitTime,
+  });
 }
 
 enum POIType { restroom, food, merch, exit, medical, parking }
@@ -43,14 +72,17 @@ enum OrderTrackingStep { placed, preparing, onTheWay, delivered }
 // ── AppState ──────────────────────────────────────────────────────────────────
 
 class AppState extends ChangeNotifier {
+  final FirestoreService _fs = FirestoreService();
+
   AppState() {
     _loadPrefs();
-    _startLiveAlertSimulation();
+    _subscribeToFirestore();
   }
 
   // ── Theme ──────────────────────────────────────────────────────────────────
   bool _isDarkMode = true;
   bool get isDarkMode => _isDarkMode;
+
   void toggleTheme() {
     _isDarkMode = !_isDarkMode;
     _prefs?.setBool('dark_mode', _isDarkMode);
@@ -70,11 +102,20 @@ class AppState extends ChangeNotifier {
   String get seatLabel => 'Section $_section, Row $_row, Seat $_seat';
 
   void setSeatInfo(String section, String row, String seat) {
-    _section = section; _row = row; _seat = seat;
+    _section = section;
+    _row = row;
+    _seat = seat;
     _prefs?.setString('section', section);
     _prefs?.setString('row', row);
     _prefs?.setString('seat', seat);
     notifyListeners();
+  }
+
+  /// Saves seat to both SharedPreferences (offline) and Firestore (cloud sync).
+  Future<void> setSeatInfoWithSync(
+      String uid, String section, String row, String seat) async {
+    setSeatInfo(section, row, seat);
+    await _fs.saveUserProfile(uid, section: section, row: row, seat: seat);
   }
 
   void completeOnboarding() {
@@ -83,8 +124,9 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ── Prefs ──────────────────────────────────────────────────────────────────
+  // ── SharedPreferences ──────────────────────────────────────────────────────
   SharedPreferences? _prefs;
+
   Future<void> _loadPrefs() async {
     _prefs = await SharedPreferences.getInstance();
     _isDarkMode = _prefs?.getBool('dark_mode') ?? true;
@@ -94,6 +136,70 @@ class AppState extends ChangeNotifier {
     _seat = _prefs?.getString('seat') ?? '3';
     _favourites = Set.from(_prefs?.getStringList('favourites') ?? []);
     notifyListeners();
+  }
+
+  // ── Firestore Subscriptions ────────────────────────────────────────────────
+  StreamSubscription<List<MenuItem>>? _menuSub;
+  StreamSubscription<List<Alert>>? _alertsSub;
+  StreamSubscription<VenueStats>? _statsSub;
+  StreamSubscription<List<PointOfInterest>>? _poisSub;
+
+  void _subscribeToFirestore() {
+    _isLoading = true;
+
+    // Menu items
+    _menuSub = _fs.menuStream().listen((items) {
+      _menuItems = items;
+      _isLoading = false;
+      notifyListeners();
+    }, onError: (_) {
+      _menuItems = kMenuItems;
+      _isLoading = false;
+      notifyListeners();
+    });
+
+    // Alerts
+    _alertsSub = _fs.alertsStream().listen((items) {
+      // Merge: keep local read-state so marking read isn't overwritten
+      final readIds = _alerts.where((a) => a.isRead).map((a) => a.id).toSet();
+      _alerts = items.map((a) {
+        if (readIds.contains(a.id)) return Alert(
+          id: a.id, title: a.title, body: a.body,
+          type: a.type, time: a.time, isRead: true,
+        );
+        return a;
+      }).toList();
+      notifyListeners();
+    }, onError: (_) {
+      _alerts = buildMockAlerts();
+      notifyListeners();
+    });
+
+    // Live stats
+    _statsSub = _fs.statsStream().listen((stats) {
+      _venueStats = stats;
+      notifyListeners();
+    }, onError: (_) {
+      _venueStats = VenueStats.defaults();
+      notifyListeners();
+    });
+
+    // POIs
+    _poisSub = _fs.poisStream().listen((pois) {
+      _pois = pois;
+      notifyListeners();
+    }, onError: (_) {
+      _pois = kPointsOfInterest.toList();
+      notifyListeners();
+    });
+  }
+
+  // ── Firestore: seed venue data on first run ────────────────────────────────
+  bool _seeded = false;
+  Future<void> seedIfNeeded() async {
+    if (_seeded) return;
+    _seeded = true;
+    await _fs.seedVenueData();
   }
 
   // ── Favourites ─────────────────────────────────────────────────────────────
@@ -120,8 +226,15 @@ class AppState extends ChangeNotifier {
 
   void addToCart(CartItem item) {
     final existing = _cart.where((i) => i.id == item.id).firstOrNull;
-    if (existing != null) { existing.quantity++; } else {
-      _cart.add(CartItem(id: item.id, name: item.name, price: item.price, quantity: 1, emoji: item.emoji));
+    if (existing != null) {
+      existing.quantity++;
+    } else {
+      _cart.add(CartItem(
+          id: item.id,
+          name: item.name,
+          price: item.price,
+          quantity: 1,
+          emoji: item.emoji));
     }
     notifyListeners();
   }
@@ -129,12 +242,19 @@ class AppState extends ChangeNotifier {
   void removeFromCart(String id) {
     final existing = _cart.where((i) => i.id == id).firstOrNull;
     if (existing != null) {
-      if (existing.quantity > 1) { existing.quantity--; } else { _cart.removeWhere((i) => i.id == id); }
+      if (existing.quantity > 1) {
+        existing.quantity--;
+      } else {
+        _cart.removeWhere((i) => i.id == id);
+      }
     }
     notifyListeners();
   }
 
-  void clearCart() { _cart.clear(); notifyListeners(); }
+  void clearCart() {
+    _cart.clear();
+    notifyListeners();
+  }
 
   // ── Order Tracking ─────────────────────────────────────────────────────────
   OrderTrackingStep _orderStep = OrderTrackingStep.placed;
@@ -144,81 +264,118 @@ class AppState extends ChangeNotifier {
   OrderTrackingStep get orderStep => _orderStep;
   String? get activeOrderId => _activeOrderId;
 
-  void placeOrder() {
-    _activeOrderId = 'VV-${DateTime.now().millisecondsSinceEpoch % 10000}';
+  Future<void> placeOrder(String? uid) async {
+    String orderId = 'VV-${DateTime.now().millisecondsSinceEpoch % 10000}';
+    // Persist to Firestore if user is authenticated
+    if (uid != null) {
+      try {
+        final fsId = await _fs.placeOrder(uid, _cart, cartTotal);
+        orderId = fsId;
+      } catch (_) {
+        // Fall through with local ID
+      }
+    }
+    _activeOrderId = orderId;
     _orderStep = OrderTrackingStep.placed;
     clearCart();
     _orderTimer?.cancel();
-    // Auto-progress through steps
     _orderTimer = Timer.periodic(const Duration(seconds: 8), (t) {
-      if (_orderStep == OrderTrackingStep.delivered) { t.cancel(); return; }
+      if (_orderStep == OrderTrackingStep.delivered) {
+        t.cancel();
+        return;
+      }
       _orderStep = OrderTrackingStep.values[_orderStep.index + 1];
       notifyListeners();
     });
     notifyListeners();
   }
 
-  void resetOrder() { _activeOrderId = null; _orderStep = OrderTrackingStep.placed; notifyListeners(); }
+  void resetOrder() {
+    _activeOrderId = null;
+    _orderStep = OrderTrackingStep.placed;
+    notifyListeners();
+  }
 
   // ── Alerts ─────────────────────────────────────────────────────────────────
-  late List<Alert> _alerts = buildMockAlerts();
+  List<Alert> _alerts = [];
   List<Alert> get alerts => List.unmodifiable(_alerts);
   bool get hasUnreadAlerts => _alerts.any((a) => !a.isRead);
 
   void markAlertRead(String id) {
     final a = _alerts.where((a) => a.id == id).firstOrNull;
-    if (a != null && !a.isRead) { a.isRead = true; notifyListeners(); }
-  }
-
-  void markAllRead() { for (final a in _alerts) { a.isRead = true; } notifyListeners(); }
-
-  void dismissAlert(String id) { _alerts.removeWhere((a) => a.id == id); notifyListeners(); }
-
-  int _liveAlertIndex = 0;
-  Timer? _alertTimer;
-  void _startLiveAlertSimulation() {
-    _alertTimer = Timer.periodic(const Duration(seconds: 45), (_) {
-      if (_liveAlertIndex >= kLiveAlertPool.length) return;
-      final template = kLiveAlertPool[_liveAlertIndex++];
-      _alerts.insert(0, Alert(
-        id: 'live_${DateTime.now().millisecondsSinceEpoch}',
-        title: template.title, body: template.body,
-        type: template.type, time: DateTime.now(),
-      ));
+    if (a != null && !a.isRead) {
+      a.isRead = true;
       notifyListeners();
-    });
+    }
   }
 
-  // ── Map ────────────────────────────────────────────────────────────────────
-  final List<PointOfInterest> pointsOfInterest = kPointsOfInterest;
+  void markAllRead() {
+    for (final a in _alerts) {
+      a.isRead = true;
+    }
+    notifyListeners();
+  }
+
+  void dismissAlert(String id) {
+    _alerts.removeWhere((a) => a.id == id);
+    notifyListeners();
+  }
+
+  /// Called by FcmService when a foreground push notification arrives.
+  void injectAlert(Alert alert) {
+    _alerts.insert(0, alert);
+    notifyListeners();
+  }
+
+  // ── Map / POIs ─────────────────────────────────────────────────────────────
+  List<PointOfInterest> _pois = kPointsOfInterest.toList();
+  List<PointOfInterest> get pointsOfInterest => _pois;
+
   PointOfInterest? _selectedPOI;
   PointOfInterest? get selectedPOI => _selectedPOI;
-  void selectPOI(PointOfInterest? poi) { _selectedPOI = poi; notifyListeners(); }
+  void selectPOI(PointOfInterest? poi) {
+    _selectedPOI = poi;
+    notifyListeners();
+  }
 
   bool _showSeatPath = false;
   bool get showSeatPath => _showSeatPath;
-  void toggleSeatPath() { _showSeatPath = !_showSeatPath; notifyListeners(); }
+  void toggleSeatPath() {
+    _showSeatPath = !_showSeatPath;
+    notifyListeners();
+  }
 
-  // ── Crowd Trend ─────────────────────────────────────────────────────────────
-  List<double> get crowdTrend => kCrowdTrendData;
+  // ── Menu ───────────────────────────────────────────────────────────────────
+  List<MenuItem> _menuItems = kMenuItems;
+  List<MenuItem> get menuItems => _menuItems;
+
+  // ── Venue Stats ────────────────────────────────────────────────────────────
+  VenueStats _venueStats = VenueStats.defaults();
+  VenueStats get venueStats => _venueStats;
+
+  List<double> get crowdTrend => _venueStats.crowdTrend;
   List<String> get crowdTrendLabels => kCrowdTrendLabels;
 
-  // ── Simulated Loading ──────────────────────────────────────────────────────
+  // ── Loading / Refresh ──────────────────────────────────────────────────────
   bool _isLoading = true;
   bool get isLoading => _isLoading;
 
   Future<void> refreshData() async {
     _isLoading = true;
     notifyListeners();
-    await Future.delayed(const Duration(milliseconds: 1500));
+    // Re-subscribe — Firestore streams auto-refresh, just show the shimmer
+    await Future.delayed(const Duration(milliseconds: 800));
     _isLoading = false;
     notifyListeners();
   }
 
   @override
   void dispose() {
+    _menuSub?.cancel();
+    _alertsSub?.cancel();
+    _statsSub?.cancel();
+    _poisSub?.cancel();
     _orderTimer?.cancel();
-    _alertTimer?.cancel();
     super.dispose();
   }
 }

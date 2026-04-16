@@ -17,20 +17,27 @@
   <base href="$FLUTTER_BASE_HREF">
 
   <meta charset="UTF-8">
-  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="A new Flutter project.">
+  <meta content="IE=Edge" http-equiv="X-Compatible">
+  <meta name="description" content="VenueVantage – Your smart stadium companion for crowd wayfinding, in-seat ordering, and live event alerts.">
+  <meta name="theme-color" content="#0F131F">
 
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="venue_vantage">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="VenueVantage">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
 
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
 
-  <title>venue_vantage</title>
+  <title>VenueVantage</title>
   <link rel="manifest" href="manifest.json">
+
+  <!--
+    Google Sign-In (GIS) library — required for google_sign_in_web.
+    The Firebase JS SDK handles auth via popup; no API key needed here.
+  -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
   <script src="flutter_bootstrap.js" async></script>

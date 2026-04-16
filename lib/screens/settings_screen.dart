@@ -3,7 +3,9 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/app_state.dart';
+import '../providers/auth_state.dart';
 import '../theme/app_theme.dart';
+import 'login_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -11,14 +13,15 @@ class SettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SafeArea(
-      child: Consumer<AppState>(
-        builder: (ctx, state, _) {
+      child: Consumer2<AppState, AuthStateProvider>(
+        builder: (ctx, state, auth, _) {
           return CustomScrollView(
             slivers: [
-              _buildHeader(),
+              _buildHeader(auth),
+              _buildAccountSection(context, auth),
               _buildSeatSection(state),
               _buildPrefsSection(state),
-              _buildAboutSection(),
+              _buildAboutSection(context, auth),
             ],
           );
         },
@@ -27,7 +30,7 @@ class SettingsScreen extends StatelessWidget {
   }
 
   // ── Header ────────────────────────────────────────────────────────────────
-  SliverToBoxAdapter _buildHeader() {
+  SliverToBoxAdapter _buildHeader(AuthStateProvider auth) {
     return SliverToBoxAdapter(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
@@ -58,6 +61,161 @@ class SettingsScreen extends StatelessWidget {
         ]),
       ),
     );
+  }
+
+  // ── Account Section ───────────────────────────────────────────────────────
+  SliverToBoxAdapter _buildAccountSection(
+      BuildContext context, AuthStateProvider auth) {
+    return SliverToBoxAdapter(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: Column(children: [
+          _SectionLabel('ACCOUNT'),
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: AppTheme.surfaceContainer,
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Row(children: [
+              // Avatar — Google photo or initials circle
+              if (auth.photoUrl != null && !auth.isAnonymous)
+                ClipOval(
+                  child: Image.network(
+                    auth.photoUrl!,
+                    width: 48,
+                    height: 48,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) =>
+                        _initialsAvatar(auth.initials),
+                  ),
+                )
+              else
+                _initialsAvatar(auth.initials),
+
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      auth.displayName,
+                      style: GoogleFonts.inter(
+                        color: AppTheme.onSurface,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 16,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    if (auth.isAnonymous)
+                      _guestChip()
+                    else
+                      Text(
+                        auth.email ?? '',
+                        style: GoogleFonts.inter(
+                          color: AppTheme.outline,
+                          fontSize: 12,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              // Sign-out ghost button
+              GestureDetector(
+                onTap: () => _signOut(context, auth),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(4),
+                    border: Border.all(
+                      color: AppTheme.error.withOpacity(0.30),
+                    ),
+                  ),
+                  child: Text(
+                    auth.isAnonymous ? 'Sign In' : 'Sign Out',
+                    style: GoogleFonts.inter(
+                      color: AppTheme.error,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+            ]),
+          ),
+          const SizedBox(height: 20),
+        ]),
+      ),
+    );
+  }
+
+  Widget _initialsAvatar(String initials) {
+    return Container(
+      width: 48,
+      height: 48,
+      decoration: const BoxDecoration(
+        gradient: AppTheme.ctaGradient,
+        shape: BoxShape.circle,
+      ),
+      child: Center(
+        child: Text(
+          initials,
+          style: GoogleFonts.inter(
+            color: AppTheme.onPrimary,
+            fontWeight: FontWeight.w800,
+            fontSize: 16,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _guestChip() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: AppTheme.tertiary.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        'GUEST MODE',
+        style: GoogleFonts.inter(
+          color: AppTheme.tertiary,
+          fontSize: 9,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.05 * 9,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _signOut(BuildContext context, AuthStateProvider auth) async {
+    if (auth.isAnonymous) {
+      // Show login screen
+      Navigator.of(context).pushReplacement(
+        PageRouteBuilder(
+          pageBuilder: (_, __, ___) => const LoginScreen(),
+          transitionsBuilder: (_, anim, __, child) =>
+              FadeTransition(opacity: anim, child: child),
+          transitionDuration: const Duration(milliseconds: 400),
+        ),
+      );
+      return;
+    }
+    await auth.signOut();
+    if (context.mounted) {
+      Navigator.of(context).pushAndRemoveUntil(
+        PageRouteBuilder(
+          pageBuilder: (_, __, ___) => const LoginScreen(),
+          transitionsBuilder: (_, anim, __, child) =>
+              FadeTransition(opacity: anim, child: child),
+          transitionDuration: const Duration(milliseconds: 400),
+        ),
+        (route) => false,
+      );
+    }
   }
 
   // ── Seat / Profile section ─────────────────────────────────────────────────
@@ -105,9 +263,9 @@ class SettingsScreen extends StatelessWidget {
                 ),
               ]),
               const Spacer(),
-              // Ghost chevron button
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(4),
                   border: Border.all(
@@ -152,8 +310,9 @@ class SettingsScreen extends StatelessWidget {
                 value: state.isDarkMode,
                 onChanged: (_) => state.toggleTheme(),
               ),
-              // Tonal separator instead of Divider
-              Container(height: 1, color: AppTheme.outlineVariant.withOpacity(0.10)),
+              Container(
+                  height: 1,
+                  color: AppTheme.outlineVariant.withOpacity(0.10)),
               _ToggleTile(
                 icon: Icons.notifications_active_rounded,
                 title: 'Push Notifications',
@@ -161,7 +320,9 @@ class SettingsScreen extends StatelessWidget {
                 value: true,
                 onChanged: (_) {},
               ),
-              Container(height: 1, color: AppTheme.outlineVariant.withOpacity(0.10)),
+              Container(
+                  height: 1,
+                  color: AppTheme.outlineVariant.withOpacity(0.10)),
               _ToggleTile(
                 icon: Icons.vibration_rounded,
                 title: 'Haptic Feedback',
@@ -178,7 +339,8 @@ class SettingsScreen extends StatelessWidget {
   }
 
   // ── About ──────────────────────────────────────────────────────────────────
-  SliverToBoxAdapter _buildAboutSection() {
+  SliverToBoxAdapter _buildAboutSection(
+      BuildContext context, AuthStateProvider auth) {
     return SliverToBoxAdapter(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(20, 0, 20, 40),
@@ -209,7 +371,6 @@ class SettingsScreen extends StatelessWidget {
                     ),
                   ),
                   const Spacer(),
-                  // Version chip
                   Container(
                     padding: const EdgeInsets.symmetric(
                         horizontal: 10, vertical: 3),
