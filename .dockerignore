@@ -1,0 +1,10 @@
+.dart_tool/
+.firebase/
+.git/
+.idea/
+build/
+test/
+*.log
+.flutter-plugins*
+.metadata
+pubspec.lock

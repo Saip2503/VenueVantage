@@ -5,26 +5,31 @@ import 'package:provider/provider.dart';
 import '../providers/app_state.dart';
 import '../providers/auth_state.dart';
 import '../theme/app_theme.dart';
-import 'login_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Consumer2<AppState, AuthStateProvider>(
-        builder: (ctx, state, auth, _) {
-          return CustomScrollView(
-            slivers: [
-              _buildHeader(auth),
-              _buildAccountSection(context, auth),
-              _buildSeatSection(state),
-              _buildPrefsSection(state),
-              _buildAboutSection(context, auth),
-            ],
-          );
-        },
+    return Scaffold(
+      backgroundColor: AppTheme.surface,
+      appBar: AppBar(
+        backgroundColor: AppTheme.surface,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: AppTheme.onSurface),
+      ),
+      body: SafeArea(
+        child: Consumer2<AppState, AuthStateProvider>(
+          builder: (ctx, state, auth, _) {
+            return CustomScrollView(
+              slivers: [
+                _buildHeader(auth),
+                _buildPrefsSection(state),
+                _buildAboutSection(context, auth),
+              ],
+            );
+          },
+        ),
       ),
     );
   }
@@ -33,7 +38,7 @@ class SettingsScreen extends StatelessWidget {
   SliverToBoxAdapter _buildHeader(AuthStateProvider auth) {
     return SliverToBoxAdapter(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           ShaderMask(
             shaderCallback: (bounds) =>
@@ -57,233 +62,7 @@ class SettingsScreen extends StatelessWidget {
               color: AppTheme.outline,
             ),
           ),
-          const SizedBox(height: 24),
-        ]),
-      ),
-    );
-  }
-
-  // ── Account Section ───────────────────────────────────────────────────────
-  SliverToBoxAdapter _buildAccountSection(
-      BuildContext context, AuthStateProvider auth) {
-    return SliverToBoxAdapter(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        child: Column(children: [
-          _SectionLabel('ACCOUNT'),
-          const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: AppTheme.surfaceContainer,
-              borderRadius: BorderRadius.circular(4),
-            ),
-            child: Row(children: [
-              // Avatar — Google photo or initials circle
-              if (auth.photoUrl != null && !auth.isAnonymous)
-                ClipOval(
-                  child: Image.network(
-                    auth.photoUrl!,
-                    width: 48,
-                    height: 48,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) =>
-                        _initialsAvatar(auth.initials),
-                  ),
-                )
-              else
-                _initialsAvatar(auth.initials),
-
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      auth.displayName,
-                      style: GoogleFonts.inter(
-                        color: AppTheme.onSurface,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 16,
-                      ),
-                    ),
-                    const SizedBox(height: 3),
-                    if (auth.isAnonymous)
-                      _guestChip()
-                    else
-                      Text(
-                        auth.email ?? '',
-                        style: GoogleFonts.inter(
-                          color: AppTheme.outline,
-                          fontSize: 12,
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-              // Sign-out ghost button
-              GestureDetector(
-                onTap: () => _signOut(context, auth),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(4),
-                    border: Border.all(
-                      color: AppTheme.error.withOpacity(0.30),
-                    ),
-                  ),
-                  child: Text(
-                    auth.isAnonymous ? 'Sign In' : 'Sign Out',
-                    style: GoogleFonts.inter(
-                      color: AppTheme.error,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ),
-            ]),
-          ),
-          const SizedBox(height: 20),
-        ]),
-      ),
-    );
-  }
-
-  Widget _initialsAvatar(String initials) {
-    return Container(
-      width: 48,
-      height: 48,
-      decoration: const BoxDecoration(
-        gradient: AppTheme.ctaGradient,
-        shape: BoxShape.circle,
-      ),
-      child: Center(
-        child: Text(
-          initials,
-          style: GoogleFonts.inter(
-            color: AppTheme.onPrimary,
-            fontWeight: FontWeight.w800,
-            fontSize: 16,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _guestChip() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: AppTheme.tertiary.withOpacity(0.15),
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Text(
-        'GUEST MODE',
-        style: GoogleFonts.inter(
-          color: AppTheme.tertiary,
-          fontSize: 9,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 0.05 * 9,
-        ),
-      ),
-    );
-  }
-
-  Future<void> _signOut(BuildContext context, AuthStateProvider auth) async {
-    if (auth.isAnonymous) {
-      // Show login screen
-      Navigator.of(context).pushReplacement(
-        PageRouteBuilder(
-          pageBuilder: (_, __, ___) => const LoginScreen(),
-          transitionsBuilder: (_, anim, __, child) =>
-              FadeTransition(opacity: anim, child: child),
-          transitionDuration: const Duration(milliseconds: 400),
-        ),
-      );
-      return;
-    }
-    await auth.signOut();
-    if (context.mounted) {
-      Navigator.of(context).pushAndRemoveUntil(
-        PageRouteBuilder(
-          pageBuilder: (_, __, ___) => const LoginScreen(),
-          transitionsBuilder: (_, anim, __, child) =>
-              FadeTransition(opacity: anim, child: child),
-          transitionDuration: const Duration(milliseconds: 400),
-        ),
-        (route) => false,
-      );
-    }
-  }
-
-  // ── Seat / Profile section ─────────────────────────────────────────────────
-  SliverToBoxAdapter _buildSeatSection(AppState state) {
-    return SliverToBoxAdapter(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        child: Column(children: [
-          _SectionLabel('MY LOCATION'),
-          const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: AppTheme.surfaceContainer,
-              borderRadius: BorderRadius.circular(4),
-            ),
-            child: Row(children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: const BoxDecoration(
-                  gradient: AppTheme.ctaGradient,
-                  borderRadius: BorderRadius.all(Radius.circular(4)),
-                ),
-                child: const Icon(Icons.chair_rounded,
-                    color: AppTheme.onPrimary, size: 20),
-              ),
-              const SizedBox(width: 16),
-              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(
-                  'Current Seat',
-                  style: GoogleFonts.inter(
-                    color: AppTheme.outline,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w500,
-                    letterSpacing: 0.05 * 11,
-                  ),
-                ),
-                Text(
-                  state.seatLabel.isEmpty ? '—' : state.seatLabel,
-                  style: GoogleFonts.inter(
-                    color: AppTheme.onSurface,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 16,
-                  ),
-                ),
-              ]),
-              const Spacer(),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(4),
-                  border: Border.all(
-                    color: AppTheme.outline.withOpacity(0.20),
-                  ),
-                ),
-                child: Text(
-                  'Change',
-                  style: GoogleFonts.inter(
-                    color: AppTheme.onSurfaceVariant,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-            ]),
-          ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 32),
         ]),
       ),
     );

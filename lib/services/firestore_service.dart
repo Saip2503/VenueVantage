@@ -166,6 +166,29 @@ class FirestoreService {
     return ref.id;
   }
 
+  Stream<List<OrderModel>> ordersStream(String uid) {
+    return _db.collection('users').doc(uid).collection('orders')
+        .orderBy('placedAt', descending: true)
+        .snapshots()
+        .map((snap) => snap.docs.map((d) => _docToOrder(d)).toList());
+  }
+
+  OrderModel _docToOrder(QueryDocumentSnapshot<Map<String, dynamic>> d) {
+    final data = d.data();
+    final itemsList = (data['items'] as List? ?? []);
+    return OrderModel(
+      id: d.id,
+      total: (data['total'] as num?)?.toDouble() ?? 0,
+      status: data['status'] ?? 'pending',
+      time: (data['placedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      items: itemsList.map((i) => OrderItem(
+        name: i['name'] ?? '',
+        emoji: i['emoji'] ?? '🍴',
+        quantity: i['quantity'] ?? 1,
+      )).toList(),
+    );
+  }
+
   // ── Venue Stats seeding (run once) ────────────────────────────────────────
   /// Seeds Firestore with mock data if collections are empty.
   /// Call from a one-time admin action or the Firebase console.
@@ -252,4 +275,29 @@ class VenueStats {
         crowdTrend: kCrowdTrendData,
         sectionData: kSectionData,
       );
+}
+
+// ── Order models ────────────────────────────────────────────────────────────
+
+class OrderModel {
+  final String id;
+  final double total;
+  final String status;
+  final DateTime time;
+  final List<OrderItem> items;
+
+  OrderModel({
+    required this.id,
+    required this.total,
+    required this.status,
+    required this.time,
+    required this.items,
+  });
+}
+
+class OrderItem {
+  final String name;
+  final String emoji;
+  final int quantity;
+  OrderItem({required this.name, required this.emoji, required this.quantity});
 }

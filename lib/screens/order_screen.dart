@@ -5,35 +5,7 @@ import 'package:provider/provider.dart';
 
 import '../providers/app_state.dart';
 import '../theme/app_theme.dart';
-
-class _MenuItem {
-  final String id;
-  final String name;
-  final String description;
-  final double price;
-  final String emoji;
-  final String category;
-
-  const _MenuItem({
-    required this.id,
-    required this.name,
-    required this.description,
-    required this.price,
-    required this.emoji,
-    required this.category,
-  });
-}
-
-const _menuItems = [
-  _MenuItem(id: 'm1', name: 'Loaded Nachos', description: 'Tortilla chips, cheddar, jalapeños, sour cream', price: 12.99, emoji: '🧀', category: 'Snacks'),
-  _MenuItem(id: 'm2', name: 'Stadium Hot Dog', description: 'Grilled beef dog in brioche bun with mustard', price: 8.49, emoji: '🌭', category: 'Snacks'),
-  _MenuItem(id: 'm3', name: 'BBQ Chicken Wings', description: '6 wings with smoky BBQ sauce & ranch', price: 14.99, emoji: '🍗', category: 'Mains'),
-  _MenuItem(id: 'm4', name: 'Spicy Chicken Sandwich', description: 'Crispy fried chicken, spicy mayo, coleslaw', price: 13.49, emoji: '🥪', category: 'Mains'),
-  _MenuItem(id: 'm5', name: 'Beer (Pint)', description: 'Draft lager, served ice cold', price: 9.00, emoji: '🍺', category: 'Drinks'),
-  _MenuItem(id: 'm6', name: 'Soft Drink (Large)', description: 'Choice of Coke, Sprite, or Fanta', price: 5.50, emoji: '🥤', category: 'Drinks'),
-  _MenuItem(id: 'm7', name: 'Mineral Water', description: 'Still or sparkling, 500ml', price: 3.00, emoji: '💧', category: 'Drinks'),
-  _MenuItem(id: 'm8', name: 'Brownie Sundae', description: 'Warm chocolate brownie with vanilla ice cream', price: 7.99, emoji: '🍫', category: 'Desserts'),
-];
+import '../providers/auth_state.dart';
 
 class OrderScreen extends StatefulWidget {
   const OrderScreen({super.key});
@@ -50,15 +22,19 @@ class _OrderScreenState extends State<OrderScreen> {
   List<String> get _categories =>
       ['All', 'Snacks', 'Mains', 'Drinks', 'Desserts'];
 
-  List<_MenuItem> get _filtered {
-    if (_selectedCategory == 'All') return _menuItems;
-    return _menuItems
+  List<MenuItem> _getFiltered(List<MenuItem> items) {
+    if (_selectedCategory == 'All') return items;
+    return items
         .where((m) => m.category == _selectedCategory)
         .toList();
   }
 
   @override
   Widget build(BuildContext context) {
+    final state = context.watch<AppState>();
+    final auth = context.watch<AuthStateProvider>();
+    final items = _getFiltered(state.menuItems);
+
     if (_orderPlaced) return _buildSuccessScreen();
 
     return SafeArea(
@@ -68,10 +44,10 @@ class _OrderScreenState extends State<OrderScreen> {
             children: [
               _buildHeader(context),
               _buildCategoryFilter(),
-              Expanded(child: _buildMenuList(context)),
+              Expanded(child: _buildMenuList(context, items)),
             ],
           ),
-          if (_showCart) _buildCartOverlay(context),
+          if (_showCart) _buildCartOverlay(context, auth.user?.uid),
           _buildCartFAB(context),
         ],
       ),
@@ -182,15 +158,15 @@ class _OrderScreenState extends State<OrderScreen> {
   }
 
   // ── Menu List ──────────────────────────────────────────────────────────────
-  Widget _buildMenuList(BuildContext context) {
+  Widget _buildMenuList(BuildContext context, List<MenuItem> filteredItems) {
     return Container(
       // surfaceContainerLow parent so menu items (surfaceContainer) lift tonally
       color: AppTheme.surfaceContainerLow,
       child: ListView.builder(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
-        itemCount: _filtered.length,
+        itemCount: filteredItems.length,
         itemBuilder: (ctx, i) => _MenuItemCard(
-          item: _filtered[i],
+          item: filteredItems[i],
           onAdd: (item) {
             context.read<AppState>().addToCart(
                   CartItem(
@@ -285,11 +261,11 @@ class _OrderScreenState extends State<OrderScreen> {
   }
 
   // ── Cart Overlay (Glass) ───────────────────────────────────────────────────
-  Widget _buildCartOverlay(BuildContext context) {
+  Widget _buildCartOverlay(BuildContext context, String? uid) {
     return _CartOverlay(
       onClose: () => setState(() => _showCart = false),
       onCheckout: () {
-        context.read<AppState>().clearCart();
+        context.read<AppState>().placeOrder(uid);
         setState(() {
           _showCart = false;
           _orderPlaced = true;
@@ -400,9 +376,9 @@ class _OrderScreenState extends State<OrderScreen> {
 // ── Menu Item Card ─────────────────────────────────────────────────────────────
 
 class _MenuItemCard extends StatelessWidget {
-  final _MenuItem item;
-  final void Function(_MenuItem) onAdd;
-  final void Function(_MenuItem) onRemove;
+  final MenuItem item;
+  final void Function(MenuItem) onAdd;
+  final void Function(MenuItem) onRemove;
 
   const _MenuItemCard({
     required this.item,

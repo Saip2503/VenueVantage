@@ -1,0 +1,13 @@
+.gcloudignore
+.git
+.gitignore
+
+# Inherit ignore rules from .gitignore
+# Except for firebase_options.dart which is needed for the build
+!lib/firebase_options.dart
+
+.dart_tool/
+build/
+*.log
+.firebase/
+.idea/

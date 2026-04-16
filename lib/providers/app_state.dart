@@ -79,6 +79,17 @@ class AppState extends ChangeNotifier {
     _subscribeToFirestore();
   }
 
+  // ── Navigation ─────────────────────────────────────────────────────────────
+  int _selectedIndex = 0;
+  int get selectedIndex => _selectedIndex;
+
+  void setSelectedIndex(int index) {
+    if (index != _selectedIndex) {
+      _selectedIndex = index;
+      notifyListeners();
+    }
+  }
+
   // ── Theme ──────────────────────────────────────────────────────────────────
   bool _isDarkMode = true;
   bool get isDarkMode => _isDarkMode;

@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/app_state.dart';
+import '../providers/auth_state.dart';
 import '../theme/app_theme.dart';
 import '../main.dart';
 
@@ -201,13 +202,26 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
 
   void _confirm() {
     final state = context.read<AppState>();
-    state.setSeatInfo(_sectionCtrl.text, _rowCtrl.text, _seatCtrl.text);
+    final auth = context.read<AuthStateProvider>();
+
+    if (auth.user != null) {
+      state.setSeatInfoWithSync(
+        auth.user!.uid,
+        _sectionCtrl.text,
+        _rowCtrl.text,
+        _seatCtrl.text,
+      );
+    } else {
+      state.setSeatInfo(_sectionCtrl.text, _rowCtrl.text, _seatCtrl.text);
+    }
+
     state.completeOnboarding();
     Navigator.of(context).pushAndRemoveUntil(
       PageRouteBuilder(
         transitionDuration: const Duration(milliseconds: 500),
         pageBuilder: (_, __, ___) => const MainShell(),
-        transitionsBuilder: (_, anim, __, child) => FadeTransition(opacity: anim, child: child),
+        transitionsBuilder: (_, anim, __, child) =>
+            FadeTransition(opacity: anim, child: child),
       ),
       (route) => false,
     );

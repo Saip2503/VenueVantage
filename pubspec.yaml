@@ -4,7 +4,7 @@ publish_to: 'none'
 version: 1.0.0+1
 
 environment:
-  sdk: ^3.8.1
+  sdk: ^3.8.0
 
 dependencies:
   flutter:
@@ -25,6 +25,10 @@ dependencies:
 
   # Google Sign-In
   google_sign_in: ^6.2.1
+
+  # Utils
+  intl: ^0.20.2
+  google_generative_ai: ^0.4.6
 
   # HTTP (REST fallback)
   http: ^1.2.2

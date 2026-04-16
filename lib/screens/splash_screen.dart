@@ -53,41 +53,9 @@ class _SplashScreenState extends State<SplashScreen>
                 parent: _ctrl,
                 curve: const Interval(0.5, 0.85, curve: Curves.easeOut)));
 
-    _ctrl.forward().then((_) async {
-      await Future.delayed(const Duration(milliseconds: 600));
-      if (mounted) {
-        _animDone = true;
-        _tryNavigate();
-      }
-    });
+    _ctrl.forward();
   }
 
-  void _tryNavigate() {
-    if (_navigated || !mounted || !_animDone) return;
-
-    final auth = context.read<AuthStateProvider>();
-    if (auth.isLoading) return; // wait for Firebase auth stream
-
-    final appState = context.read<AppState>();
-
-    _navigated = true;
-    Widget dest;
-
-    if (auth.isLoggedOut) {
-      dest = const LoginScreen();
-    } else if (appState.onboardingDone) {
-      dest = const MainShell();
-    } else {
-      dest = const OnboardingScreen();
-    }
-
-    Navigator.of(context).pushReplacement(PageRouteBuilder(
-      transitionDuration: const Duration(milliseconds: 600),
-      pageBuilder: (_, __, ___) => dest,
-      transitionsBuilder: (_, anim, __, child) =>
-          FadeTransition(opacity: anim, child: child),
-    ));
-  }
 
   @override
   void dispose() {
@@ -97,11 +65,6 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   Widget build(BuildContext context) {
-    // Re-evaluate routing whenever auth state changes
-    final auth = context.watch<AuthStateProvider>();
-    if (!auth.isLoading && _animDone && !_navigated) {
-      WidgetsBinding.instance.addPostFrameCallback((_) => _tryNavigate());
-    }
 
     return Scaffold(
       backgroundColor: AppTheme.surface,

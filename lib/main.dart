@@ -12,7 +12,11 @@ import 'screens/map_screen.dart';
 import 'screens/order_screen.dart';
 import 'screens/alerts_screen.dart';
 import 'screens/settings_screen.dart';
+import 'screens/profile_screen.dart';
+import 'screens/assistant_screen.dart';
 import 'theme/app_theme.dart';
+import 'screens/login_screen.dart';
+import 'screens/onboarding_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -30,6 +34,7 @@ void main() async {
   );
 }
 
+
 class VenueVantageApp extends StatelessWidget {
   const VenueVantageApp({super.key});
 
@@ -42,8 +47,37 @@ class VenueVantageApp extends StatelessWidget {
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: isDark ? ThemeMode.dark : ThemeMode.light,
-      home: const SplashScreen(),
+      home: const AuthGate(),
     );
+  }
+}
+
+/// Dynamic gate that switches screens based on Auth and Onboarding state.
+class AuthGate extends StatelessWidget {
+  const AuthGate({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final auth = context.watch<AuthStateProvider>();
+    final app = context.watch<AppState>();
+
+    // 1. Initial Loading / Splash
+    if (auth.isLoading) {
+      return const SplashScreen();
+    }
+
+    // 2. Unauthenticated
+    if (auth.isLoggedOut) {
+      return const LoginScreen();
+    }
+
+    // 3. Authenticated - Check Onboarding
+    if (!app.onboardingDone) {
+      return const OnboardingScreen();
+    }
+
+    // 4. Fully ready
+    return const MainShell();
   }
 }
 
@@ -56,7 +90,6 @@ class MainShell extends StatefulWidget {
 }
 
 class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
-  int _selectedIndex = 0;
   late AnimationController _fadeController;
   late Animation<double> _fadeAnimation;
 
@@ -65,7 +98,7 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
     MapScreen(),
     OrderScreen(),
     AlertsScreen(),
-    SettingsScreen(),
+    ProfileScreen(),
   ];
 
   @override
@@ -86,9 +119,10 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
   }
 
   void _onNavTap(int index) {
-    if (index == _selectedIndex) return;
+    final state = context.read<AppState>();
+    if (index == state.selectedIndex) return;
     _fadeController.reverse().then((_) {
-      setState(() => _selectedIndex = index);
+      state.setSelectedIndex(index);
       _fadeController.forward();
     });
   }
@@ -101,18 +135,22 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = context.watch<AppState>().isDarkMode;
+    final appState = context.watch<AppState>();
+    final isDark = appState.isDarkMode;
+    final selectedIndex = appState.selectedIndex;
+
     return LayoutBuilder(
       builder: (context, constraints) {
         if (constraints.maxWidth >= 700) {
           return Scaffold(
             backgroundColor: AppTheme.bg(isDark),
+            floatingActionButton: _buildAssistantFab(context),
             body: Row(children: [
               _buildSidebar(isDark),
               Expanded(
                 child: FadeTransition(
                   opacity: _fadeAnimation,
-                  child: _screens[_selectedIndex],
+                  child: _screens[selectedIndex],
                 ),
               ),
             ]),
@@ -120,12 +158,26 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
         }
         return Scaffold(
           backgroundColor: AppTheme.bg(isDark),
+          floatingActionButton: _buildAssistantFab(context),
           body: FadeTransition(
               opacity: _fadeAnimation,
-              child: _screens[_selectedIndex]),
+              child: _screens[selectedIndex]),
           bottomNavigationBar: _buildNavBar(isDark),
         );
       },
+    );
+  }
+
+  Widget _buildAssistantFab(BuildContext context) {
+    return FloatingActionButton.extended(
+      onPressed: () {
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const AssistantScreen()),
+        );
+      },
+      backgroundColor: AppTheme.primary,
+      icon: const Icon(Icons.auto_awesome_rounded, color: Colors.white),
+      label: Text('Venue AI', style: GoogleFonts.inter(fontWeight: FontWeight.w700, color: Colors.white)),
     );
   }
 
@@ -160,7 +212,7 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
               color: AppTheme.outlineVariant.withOpacity(0.12)),
           const SizedBox(height: 8),
           ...List.generate(_navItems.length, (i) {
-            final isSelected = _selectedIndex == i;
+            final isSelected = context.watch<AppState>().selectedIndex == i;
             return Padding(
               padding:
                   const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
@@ -216,7 +268,7 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
     _NavItem(icon: Icons.map_rounded, label: 'Map'),
     _NavItem(icon: Icons.shopping_bag_rounded, label: 'Order'),
     _NavItem(icon: Icons.notifications_rounded, label: 'Alerts'),
-    _NavItem(icon: Icons.settings_rounded, label: 'Settings'),
+    _NavItem(icon: Icons.person_rounded, label: 'Profile'),
   ];
 
   // ── Bottom Nav ────────────────────────────────────────────────────────────
@@ -237,7 +289,7 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
                 button: true,
                 child: _NavBarButton(
                   item: _navItems[i],
-                  isSelected: _selectedIndex == i,
+                  isSelected: context.watch<AppState>().selectedIndex == i,
                   onTap: () => _onNavTap(i),
                   hasNotification: hasNotif,
                   isDark: isDark,

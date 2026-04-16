@@ -5,6 +5,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/app_state.dart';
+import '../providers/auth_state.dart';
 import '../theme/app_theme.dart';
 import '../widgets/glass_card.dart';
 
@@ -81,57 +82,73 @@ class HomeScreen extends StatelessWidget {
 
   // ── Header ──────────────────────────────────────────────────────────────────
   Widget _buildHeader(BuildContext context, bool isDark) {
-    return SliverToBoxAdapter(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-        child: Row(children: [
-          Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(
-              'Welcome back 👋',
-              style: GoogleFonts.inter(
-                  fontSize: 13, color: AppTheme.outline),
-            ),
-            const SizedBox(height: 2),
-            ShaderMask(
-              shaderCallback: (bounds) =>
-                  AppTheme.ctaGradient.createShader(bounds),
-              blendMode: BlendMode.srcIn,
-              child: Text(
-                'VenueVantage',
-                style: GoogleFonts.inter(
-                  fontSize: 26,
-                  fontWeight: FontWeight.w800,
-                  color: Colors.white,
+    return Consumer<AuthStateProvider>(
+      builder: (context, auth, _) {
+        final name = auth.isAnonymous ? 'Guest' : (auth.user?.displayName?.split(' ').first ?? 'Member');
+        return SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+            child: Row(children: [
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(
+                  'Welcome back, $name 👋',
+                  style: GoogleFonts.inter(fontSize: 13, color: AppTheme.outline),
                 ),
-              ),
-            ),
-          ]),
-          const Spacer(),
-          Semantics(
-            label: 'User profile: JD',
-            child: Container(
-              width: 44,
-              height: 44,
-              decoration: const BoxDecoration(
-                gradient: AppTheme.ctaGradient,
-                shape: BoxShape.circle,
-              ),
-              child: Center(
-                child: Text(
-                  'JD',
-                  style: GoogleFonts.inter(
-                    color: AppTheme.onPrimary,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 14,
+                const SizedBox(height: 2),
+                ShaderMask(
+                  shaderCallback: (bounds) =>
+                      AppTheme.ctaGradient.createShader(bounds),
+                  blendMode: BlendMode.srcIn,
+                  child: Text(
+                    'VenueVantage',
+                    style: GoogleFonts.inter(
+                      fontSize: 26,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ]),
+              const Spacer(),
+              Semantics(
+                label: 'User profile: ${auth.initials}',
+                child: Container(
+                  width: 44,
+                  height: 44,
+                  decoration: const BoxDecoration(
+                    gradient: AppTheme.ctaGradient,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: auth.photoUrl != null && !auth.isAnonymous
+                        ? ClipOval(
+                            child: Image.network(
+                              auth.photoUrl!,
+                              width: 44,
+                              height: 44,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => _initials(auth.initials),
+                            ),
+                          )
+                        : _initials(auth.initials),
                   ),
                 ),
               ),
-            ),
+            ]),
           ),
-        ]),
-      ),
+        );
+      },
     );
   }
+
+  Widget _initials(String text) => Text(
+        text,
+        style: GoogleFonts.inter(
+          color: AppTheme.onPrimary,
+          fontWeight: FontWeight.w700,
+          fontSize: 14,
+        ),
+      );
 
   // ── Event Banner ──────────────────────────────────────────────────────────────
   Widget _buildEventBanner(BuildContext context) {
@@ -435,6 +452,7 @@ class HomeScreen extends StatelessWidget {
               icon: Icons.fastfood_rounded,
               label: 'Order\nFood',
               gradient: AppTheme.ctaGradient,
+              onTap: () => context.read<AppState>().setSelectedIndex(2),
             )),
             const SizedBox(width: 10),
             Expanded(child: _QuickAction(
@@ -676,12 +694,14 @@ class _QuickAction extends StatelessWidget {
   final String label;
   final LinearGradient? gradient;
   final bool isGhost;
+  final VoidCallback? onTap;
 
   const _QuickAction({
     required this.icon,
     required this.label,
     this.gradient,
     this.isGhost = false,
+    this.onTap,
   });
 
   @override
@@ -689,33 +709,35 @@ class _QuickAction extends StatelessWidget {
     return Semantics(
       label: label.replaceAll('\n', ' '),
       button: true,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 14),
-        decoration: BoxDecoration(
-          gradient: isGhost ? null : gradient,
-          color: isGhost ? Colors.transparent : null,
-          borderRadius: BorderRadius.circular(4),
-          border: isGhost
-              ? Border.all(color: AppTheme.outline.withOpacity(0.20))
-              : null,
-        ),
-        child: Column(children: [
-          Icon(icon,
-              color: isGhost ? AppTheme.onSurfaceVariant : AppTheme.onPrimary,
-              size: 22),
-          const SizedBox(height: 6),
-          Text(
-            label,
-            textAlign: TextAlign.center,
-            style: GoogleFonts.inter(
-              color:
-                  isGhost ? AppTheme.onSurfaceVariant : AppTheme.onPrimary,
-              fontSize: 10,
-              fontWeight: FontWeight.w600,
-              height: 1.2,
-            ),
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          decoration: BoxDecoration(
+            gradient: isGhost ? null : gradient,
+            color: isGhost ? Colors.transparent : null,
+            borderRadius: BorderRadius.circular(4),
+            border: isGhost
+                ? Border.all(color: AppTheme.outline.withOpacity(0.20))
+                : null,
           ),
-        ]),
+          child: Column(children: [
+            Icon(icon,
+                color: isGhost ? AppTheme.onSurfaceVariant : AppTheme.onPrimary,
+                size: 22),
+            const SizedBox(height: 6),
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              style: GoogleFonts.inter(
+                color: isGhost ? AppTheme.onSurfaceVariant : AppTheme.onPrimary,
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+                height: 1.2,
+              ),
+            ),
+          ]),
+        ),
       ),
     );
   }
