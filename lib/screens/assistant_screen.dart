@@ -55,7 +55,7 @@ class _AssistantScreenState extends State<AssistantScreen> {
     }
 
     _model = GenerativeModel(
-      model: 'gemini-1.5-flash',
+      model: 'gemini-2.5-flash',
       apiKey: apiKey,
       systemInstruction: _getSystemInstruction(),
     );
@@ -107,7 +107,7 @@ class _AssistantScreenState extends State<AssistantScreen> {
         try {
           // If Flash fails, try Pro (ensure name is exactly 'gemini-1.5-pro')
           final fallbackModel = GenerativeModel(
-            model: 'gemini-1.5-pro',
+            model: 'gemini-2.5-pro',
             apiKey: apiKey,
             systemInstruction: _getSystemInstruction(),
           );
