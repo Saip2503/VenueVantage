@@ -35,15 +35,15 @@ List<Alert> kLiveAlertPool = [
 
 // ── Points of Interest ────────────────────────────────────────────────────────
 const List<PointOfInterest> kPointsOfInterest = [
-  PointOfInterest(id: 'p1', name: 'Main Concessions', type: POIType.food, x: 0.3, y: 0.25, crowdLevel: 72, waitTime: '12 min'),
-  PointOfInterest(id: 'p2', name: 'East Food Court', type: POIType.food, x: 0.72, y: 0.3, crowdLevel: 35, waitTime: '4 min'),
-  PointOfInterest(id: 'p3', name: 'Restrooms – North', type: POIType.restroom, x: 0.45, y: 0.12, crowdLevel: 55, waitTime: '7 min'),
-  PointOfInterest(id: 'p4', name: 'Restrooms – South', type: POIType.restroom, x: 0.5, y: 0.85, crowdLevel: 20, waitTime: '2 min'),
-  PointOfInterest(id: 'p5', name: 'Merch Store', type: POIType.merch, x: 0.2, y: 0.55, crowdLevel: 60, waitTime: '9 min'),
-  PointOfInterest(id: 'p6', name: 'Exit A – Optimal', type: POIType.exit, x: 0.08, y: 0.5, crowdLevel: 15, waitTime: '3 min'),
-  PointOfInterest(id: 'p7', name: 'Exit B', type: POIType.exit, x: 0.92, y: 0.5, crowdLevel: 80, waitTime: '18 min'),
-  PointOfInterest(id: 'p8', name: 'Medical Station', type: POIType.medical, x: 0.55, y: 0.5, crowdLevel: 10, waitTime: 'Immediate'),
-  PointOfInterest(id: 'p9', name: 'Parking Shuttle', type: POIType.parking, x: 0.8, y: 0.8, crowdLevel: 45, waitTime: '6 min'),
+  PointOfInterest(id: 'p1', name: 'Entrance A', type: POIType.exit, x: 0.08, y: 0.5, crowdLevel: 15, waitTime: '2 min'),
+  PointOfInterest(id: 'p2', name: 'Main Plaza', type: POIType.parking, x: 0.02, y: 0.5, crowdLevel: 25, waitTime: '5 min'),
+  PointOfInterest(id: 'p3', name: 'Club Lounge', type: POIType.food, x: 0.75, y: 0.25, crowdLevel: 40, waitTime: '4 min'),
+  PointOfInterest(id: 'p4', name: 'Food Court B', type: POIType.food, x: 0.82, y: 0.65, crowdLevel: 20, waitTime: '3 min'),
+  PointOfInterest(id: 'p5', name: 'Food Court C', type: POIType.food, x: 0.85, y: 0.45, crowdLevel: 55, waitTime: '8 min'),
+  PointOfInterest(id: 'p6', name: 'Restrooms', type: POIType.restroom, x: 0.82, y: 0.82, crowdLevel: 65, waitTime: '6 min'),
+  PointOfInterest(id: 'p7', name: 'Merchandise Stand', type: POIType.merch, x: 0.78, y: 0.55, crowdLevel: 50, waitTime: '10 min'),
+  PointOfInterest(id: 'p8', name: 'Section 101-110', type: POIType.exit, x: 0.15, y: 0.75, crowdLevel: 30, waitTime: '3 min'),
+  PointOfInterest(id: 'p9', name: 'Concessions', type: POIType.food, x: 0.75, y: 0.75, crowdLevel: 45, waitTime: '5 min'),
 ];
 
 // ── Crowd Trend Data (last 30 minutes, 6 data points) ────────────────────────
@@ -51,11 +51,10 @@ const List<double> kCrowdTrendData = [45, 58, 63, 71, 78, 85];
 const List<String> kCrowdTrendLabels = ['-30m', '-24m', '-18m', '-12m', '-6m', 'Now'];
 
 // ── Section crowd breakdown ───────────────────────────────────────────────────
+// Matching the "Heatmap Key" from image: Green (Low), Amber (Med), Red (High)
 const List<Map<String, dynamic>> kSectionData = [
-  {'section': 'A', 'crowd': 92.0, 'color': 0xFFEF4444},
-  {'section': 'B', 'crowd': 78.0, 'color': 0xFFF59E0B},
-  {'section': 'C', 'crowd': 65.0, 'color': 0xFFF59E0B},
-  {'section': 'D', 'crowd': 88.0, 'color': 0xFFEF4444},
-  {'section': 'E', 'crowd': 45.0, 'color': 0xFF10B981},
-  {'section': 'F', 'crowd': 30.0, 'color': 0xFF10B981},
+  {'section': '104', 'crowd': 90.0, 'color': 0xFFEF4444}, // High (Red)
+  {'section': '202', 'crowd': 55.0, 'color': 0xFFF59E0B}, // Med (Amber)
+  {'section': 'FC-B', 'crowd': 20.0, 'color': 0xFF10B981}, // Low (Green)
+  {'section': 'Entrance', 'crowd': 30.0, 'color': 0xFF10B981},
 ];
