@@ -30,4 +30,4 @@ images:
   - 'gcr.io/$PROJECT_ID/venuevantage-web'
 
 substitutions:
-  _GEMINI_API_KEY: 'AQ.Ab8RN6JoS6DNra3fHN_1abigj_3uBhq4-xtdV85Z-pNWHXZqmg' # To be provided in the trigger configuration
+  _GEMINI_API_KEY: '' # To be provided in the trigger configuration
