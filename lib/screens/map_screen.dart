@@ -196,23 +196,9 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   Widget _buildStadiumBackground(BoxConstraints constraints) {
-    return SizedBox(
-      width: constraints.maxWidth,
-      height: constraints.maxHeight,
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          Container(color: const Color(0xFF0a0e1a)),
-          Opacity(
-            opacity: 0.4,
-            child: Image.network(
-              'https://lh3.googleusercontent.com/aida-public/AB6AXuCt-EGaDmxdVBpSWoYWd7G2rEFaQSbmwvmJy1zKqHUvrh9CrRTpkyAsUbqyoO9RV0u7xHnwD_FC_fsNUFsBlfVkmXrZTpTDMhQ9923qjZZF3TcjxG80azV4SS3mBopR3c9yWOZsk1tV2-rSA-7S7LHTZRDOP5j2zUFaXsVyCAWNvubQfpqgQi4NF51uwHRiyf1wsV1xwQbT0IDLFiDsQnKwiUIuFot9Ge_8rzicWIBxAFCp4NOvlTdYhL-peXzQxr9rMdDUTlkYgbo',
-              fit: BoxFit.cover,
-              colorBlendMode: BlendMode.screen,
-            ),
-          ),
-        ],
-      ),
+    return CustomPaint(
+      size: Size(constraints.maxWidth, constraints.maxHeight),
+      painter: _StadiumPainter(),
     );
   }
 
@@ -503,9 +489,9 @@ class _POIMarkerState extends State<_POIMarker>
           shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(
-              color: getGlowColor().withOpacity(widget.isSelected ? 0.6 : 0.3),
-              blurRadius: widget.isSelected ? 14 : 8,
-              spreadRadius: widget.isSelected ? 3 : 0,
+              color: getGlowColor().withOpacity(widget.isSelected ? 0.8 : 0.4),
+              blurRadius: widget.isSelected ? 24 : 16,
+              spreadRadius: widget.isSelected ? 6 : 2,
             ),
           ],
           border: Border.all(
@@ -580,84 +566,69 @@ class _YouAreHereMarkerState extends State<_YouAreHereMarker>
 class _StadiumPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    final Paint outerPaint = Paint()
-      ..color = const Color(0xFF1A2235)
-      ..style = PaintingStyle.fill;
+    final center = Offset(size.width / 2, size.height / 2);
+    
+    // 1. Deep Background Glow
+    final bgPaint = Paint()
+      ..shader = RadialGradient(
+        colors: [
+          const Color(0xFF1E293B).withOpacity(0.8),
+          const Color(0xFF0F172A),
+        ],
+      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
+    canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), bgPaint);
 
-    final Paint trackPaint = Paint()
-      ..color = const Color(0xFF0D1520)
-      ..style = PaintingStyle.fill;
-
-    final Paint fieldPaint = Paint()
-      ..color = const Color(0xFF14532D).withOpacity(0.7)
-      ..style = PaintingStyle.fill;
-
-    final Paint linePaint = Paint()
-      ..color = const Color(0xFF3B82F6).withOpacity(0.12)
+    // 2. Concentric Rings (Stadium Bowl)
+    final ringPaint = Paint()
       ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.2
+      ..color = const Color(0xFF334155).withOpacity(0.4);
+
+    canvas.drawCircle(center, size.width * 0.45, ringPaint); // Outer Outer
+    canvas.drawCircle(center, size.width * 0.38, ringPaint..strokeWidth = 2); // Main Perimeter
+    canvas.drawCircle(center, size.width * 0.30, ringPaint..strokeWidth = 1); // Mid Ring
+    canvas.drawCircle(center, size.width * 0.22, ringPaint); // Inner Ring
+
+    // 3. Radial Section Lines (The "Slices")
+    final linePaint = Paint()
+      ..color = const Color(0xFF334155).withOpacity(0.2)
       ..strokeWidth = 1;
 
-    // Outer stadium
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        Rect.fromLTWH(0, 0, size.width, size.height),
-        const Radius.circular(20),
-      ),
-      outerPaint,
-    );
+    for (int i = 0; i < 16; i++) {
+      final angle = (i * 22.5) * (3.14159 / 180);
+      final start = Offset(
+        center.dx + (size.width * 0.22) * ui.Math.cos(angle),
+        center.dy + (size.width * 0.22) * ui.Math.sin(angle),
+      );
+      final end = Offset(
+        center.dx + (size.width * 0.45) * ui.Math.cos(angle),
+        center.dy + (size.width * 0.45) * ui.Math.sin(angle),
+      );
+      canvas.drawLine(start, end, linePaint);
+    }
 
-    // Running track (oval)
-    final rect = Rect.fromCenter(
-      center: Offset(size.width / 2, size.height / 2),
-      width: size.width * 0.75,
-      height: size.height * 0.65,
-    );
-    canvas.drawOval(rect, trackPaint);
-
-    // Field
+    // 4. Playing Field (The Pitch)
     final fieldRect = Rect.fromCenter(
-      center: Offset(size.width / 2, size.height / 2),
-      width: size.width * 0.55,
-      height: size.height * 0.45,
+      center: center,
+      width: size.width * 0.35,
+      height: size.height * 0.32,
     );
-    canvas.drawRect(fieldRect, fieldPaint);
-
-    // Center line
-    canvas.drawLine(
-      Offset(size.width / 2, fieldRect.top),
-      Offset(size.width / 2, fieldRect.bottom),
-      linePaint..strokeWidth = 1.5,
+    
+    // Field fill
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(fieldRect, const Radius.circular(4)),
+      Paint()..color = const Color(0xFF064E3B).withOpacity(0.5),
     );
-
-    // Center circle
-    canvas.drawCircle(
-      Offset(size.width / 2, size.height / 2),
-      size.height * 0.08,
-      Paint()
-        ..color = Colors.white.withOpacity(0.08)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.5,
-    );
-
-    // Grid lines for the venue seating area
-    final gridPaint = Paint()
-      ..color = Colors.white.withOpacity(0.03)
-      ..strokeWidth = 0.8;
-
-    for (int i = 1; i < 8; i++) {
-      canvas.drawLine(
-        Offset(size.width * i / 8, 0),
-        Offset(size.width * i / 8, size.height),
-        gridPaint,
-      );
-    }
-    for (int i = 1; i < 6; i++) {
-      canvas.drawLine(
-        Offset(0, size.height * i / 6),
-        Offset(size.width, size.height * i / 6),
-        gridPaint,
-      );
-    }
+    
+    // Field lines
+    final fieldLinePaint = Paint()
+      ..color = const Color(0xFF10B981).withOpacity(0.3)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1;
+    
+    canvas.drawRRect(RRect.fromRectAndRadius(fieldRect, const Radius.circular(4)), fieldLinePaint);
+    canvas.drawCircle(center, size.width * 0.06, fieldLinePaint);
+    canvas.drawLine(Offset(center.dx, fieldRect.top), Offset(center.dx, fieldRect.bottom), fieldLinePaint);
   }
 
   @override
