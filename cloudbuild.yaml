@@ -31,3 +31,6 @@ images:
 
 substitutions:
   _GEMINI_API_KEY: '' # To be provided in the trigger configuration
+
+options:
+  logging: CLOUD_LOGGING_ONLY
