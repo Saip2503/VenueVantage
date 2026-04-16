@@ -28,7 +28,7 @@ dependencies:
 
   # Utils
   intl: ^0.20.2
-  google_generative_ai: ^0.4.6
+  google_generative_ai: ^0.4.5
 
   # HTTP (REST fallback)
   http: ^1.2.2
