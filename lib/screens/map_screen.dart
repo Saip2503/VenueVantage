@@ -183,47 +183,74 @@ class _MapScreenState extends State<MapScreen> {
                   .toList();
 
         return Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-          child: Container(
-            decoration: BoxDecoration(
-              color: AppTheme.bgCard,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: AppTheme.borderColor),
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(20),
-              child: LayoutBuilder(
-                builder: (ctx, constraints) {
-                  return Stack(
-                    children: [
-                      // Stadium background
-                      _buildStadiumBackground(constraints),
-                      // POI markers
-                      ...pois.map(
-                        (poi) => Positioned(
-                          left: poi.x * constraints.maxWidth - 18,
-                          top: poi.y * constraints.maxHeight - 18,
-                          child: _POIMarker(
-                            poi: poi,
-                            style: _styles[poi.type]!,
-                            isSelected: state.selectedPOI?.id == poi.id,
-                            onTap: () => state.selectPOI(
-                              state.selectedPOI?.id == poi.id ? null : poi,
+          padding: const EdgeInsets.all(16.0),
+          child: Stack(
+            children: [
+              // The Navigable Map Container
+              Container(
+                decoration: BoxDecoration(
+                  color: AppTheme.bgCard,
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(color: AppTheme.borderColor),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.2),
+                      blurRadius: 20,
+                      offset: const Offset(0, 10),
+                    ),
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(24),
+                  child: LayoutBuilder(
+                    builder: (ctx, constraints) {
+                      return InteractiveViewer(
+                        maxScale: 3.0,
+                        minScale: 1.0,
+                        boundaryMargin: const EdgeInsets.all(50),
+                        child: Stack(
+                          children: [
+                            // 1. Blueprint Background
+                            _buildStadiumBackground(constraints),
+
+                            // 2. Crowd Heatmap
+                            //_buildHeatmapOverlay(constraints),
+
+                            // 3. Dynamic POI Markers
+                            ...pois.map(
+                              (poi) => Positioned(
+                                left: poi.x * constraints.maxWidth - 18,
+                                top: poi.y * constraints.maxHeight - 18,
+                                child: _POIMarker(
+                                  poi: poi,
+                                  style: _styles[poi.type]!,
+                                  isSelected: state.selectedPOI?.id == poi.id,
+                                  onTap: () => state.selectPOI(
+                                    state.selectedPOI?.id == poi.id
+                                        ? null
+                                        : poi,
+                                  ),
+                                ),
+                              ),
                             ),
-                          ),
+
+                            // 4. "You Are Here" Marker (Static for demo)
+                            Positioned(
+                              left: constraints.maxWidth * 0.48,
+                              top: constraints.maxHeight * 0.85,
+                              child: _YouAreHereMarker(),
+                            ),
+                          ],
                         ),
-                      ),
-                      // "You are here" marker
-                      Positioned(
-                        left: 0.45 * constraints.maxWidth - 10,
-                        top: 0.5 * constraints.maxHeight - 10,
-                        child: _YouAreHereMarker(),
-                      ),
-                    ],
-                  );
-                },
+                      );
+                    },
+                  ),
+                ),
               ),
-            ),
+
+              // 5. Selected POI Details (Floats OVER the interactive map)
+              _buildPOIDetailsSheet(context),
+            ],
           ),
         );
       },
