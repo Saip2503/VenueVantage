@@ -1,0 +1,33 @@
+steps:
+  # Create .env file for the build so flutter_dotenv can bundle it
+  - name: 'bash'
+    args: ['-c', 'echo "GEMINI_API_KEY=$_GEMINI_API_KEY" > .env']
+
+  # Build the Docker image
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'gcr.io/$PROJECT_ID/venuevantage-web', '.']
+
+  # Push the image
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/$PROJECT_ID/venuevantage-web']
+
+  # Deploy to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: 'gcloud'
+    args:
+      - 'run'
+      - 'deploy'
+      - 'venuevantage-web'
+      - '--image'
+      - 'gcr.io/$PROJECT_ID/venuevantage-web'
+      - '--region'
+      - 'us-central1'
+      - '--platform'
+      - 'managed'
+      - '--allow-unauthenticated'
+
+images:
+  - 'gcr.io/$PROJECT_ID/venuevantage-web'
+
+substitutions:
+  _GEMINI_API_KEY: 'AQ.Ab8RN6JoS6DNra3fHN_1abigj_3uBhq4-xtdV85Z-pNWHXZqmg' # To be provided in the trigger configuration

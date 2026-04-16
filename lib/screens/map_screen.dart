@@ -1,4 +1,6 @@
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
@@ -197,8 +199,19 @@ class _MapScreenState extends State<MapScreen> {
     return SizedBox(
       width: constraints.maxWidth,
       height: constraints.maxHeight,
-      child: CustomPaint(
-        painter: _StadiumPainter(),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          Container(color: const Color(0xFF0a0e1a)),
+          Opacity(
+            opacity: 0.4,
+            child: Image.network(
+              'https://lh3.googleusercontent.com/aida-public/AB6AXuCt-EGaDmxdVBpSWoYWd7G2rEFaQSbmwvmJy1zKqHUvrh9CrRTpkyAsUbqyoO9RV0u7xHnwD_FC_fsNUFsBlfVkmXrZTpTDMhQ9923qjZZF3TcjxG80azV4SS3mBopR3c9yWOZsk1tV2-rSA-7S7LHTZRDOP5j2zUFaXsVyCAWNvubQfpqgQi4NF51uwHRiyf1wsV1xwQbT0IDLFiDsQnKwiUIuFot9Ge_8rzicWIBxAFCp4NOvlTdYhL-peXzQxr9rMdDUTlkYgbo',
+              fit: BoxFit.cover,
+              colorBlendMode: BlendMode.screen,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -227,24 +240,36 @@ class _MapScreenState extends State<MapScreen> {
               curve: Curves.easeOutCubic,
               padding: const EdgeInsets.all(18),
               decoration: BoxDecoration(
-                color: AppTheme.bgElevated,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: style.color.withOpacity(0.4)),
+                color: Colors.white.withOpacity(0.05),
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: const Color(0xFF424754).withOpacity(0.15)),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.5),
-                    blurRadius: 20,
-                    offset: const Offset(0, 8),
-                  ),
-                  BoxShadow(
-                    color: style.color.withOpacity(0.15),
-                    blurRadius: 20,
+                    color: Colors.black.withOpacity(0.2),
+                    blurRadius: 30,
                   ),
                 ],
               ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(24),
+                child: BackdropFilter(
+                  filter: _getBlurFilter(),
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'ACTIVE NAVIGATION',
+                          style: GoogleFonts.inter(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w900,
+                            color: AppTheme.primary,
+                            letterSpacing: 2,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
                   Row(
                     children: [
                       Container(
@@ -366,6 +391,9 @@ class _MapScreenState extends State<MapScreen> {
                 ],
               ),
             ),
+            ),
+            ),
+            ),
           ),
         );
       },
@@ -457,36 +485,45 @@ class _POIMarkerState extends State<_POIMarker>
     super.dispose();
   }
 
-  @override
   Widget build(BuildContext context) {
+    Color getGlowColor() {
+      if (widget.poi.crowdLevel > 65) return const Color(0xFFf87171); // Red
+      if (widget.poi.crowdLevel > 35) return const Color(0xFFfbbf24); // Amber
+      return const Color(0xFF4ade80); // Green
+    }
+    
     return GestureDetector(
       onTap: widget.onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        width: 36,
-        height: 36,
+        width: widget.isSelected ? 48 : 40,
+        height: widget.isSelected ? 48 : 40,
         decoration: BoxDecoration(
-          color: widget.isSelected
-              ? widget.style.color
-              : widget.style.color.withOpacity(0.85),
+          color: Colors.white.withOpacity(0.05),
           shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(
-              color: widget.style.color.withOpacity(widget.isSelected ? 0.6 : 0.3),
-              blurRadius: widget.isSelected ? 14 : 6,
+              color: getGlowColor().withOpacity(widget.isSelected ? 0.6 : 0.3),
+              blurRadius: widget.isSelected ? 14 : 8,
               spreadRadius: widget.isSelected ? 3 : 0,
             ),
           ],
           border: Border.all(
-            color: Colors.white.withOpacity(widget.isSelected ? 0.8 : 0.3),
+            color: getGlowColor().withOpacity(0.3),
             width: 2,
           ),
         ),
-        child: Icon(widget.style.icon, color: Colors.white, size: 16),
+        child: BackdropFilter(
+          filter: _getBlurFilter(),
+          child: Icon(widget.style.icon, color: getGlowColor(), size: widget.isSelected ? 24 : 20),
+        ),
       ),
     );
   }
 }
+
+ui.ImageFilter _getBlurFilter() => ui.ImageFilter.blur(sigmaX: 16, sigmaY: 16);
+
 
 class _YouAreHereMarker extends StatefulWidget {
   @override

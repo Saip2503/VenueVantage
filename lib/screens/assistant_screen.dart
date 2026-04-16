@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:provider/provider.dart';
 
@@ -40,9 +41,8 @@ class _AssistantScreenState extends State<AssistantScreen> {
     final appState = context.read<AppState>();
     final stats = appState.venueStats;
     
-    // IMPORTANT: In production, do not hardcode. Use standard Flutter env vars or backend.
-    // Ensure you pass --dart-define=GEMINI_API_KEY="..." during build/run.
-    const apiKey = String.fromEnvironment('GEMINI_API_KEY', defaultValue: '');
+    // Read from .env file securely
+    final apiKey = dotenv.env['GEMINI_API_KEY'] ?? '';
     
     if (apiKey.isEmpty) {
       setState(() {
@@ -55,18 +55,9 @@ class _AssistantScreenState extends State<AssistantScreen> {
     }
 
     _model = GenerativeModel(
-      model: 'gemini-1.5-flash',
+      model: 'gemini-1.5-flash-latest',
       apiKey: apiKey,
-      systemInstruction: Content.system('''
-You are the VenueVantage Smart Assistant, an AI guide for users at a large sporting event.
-Current Context:
-- User Seat: Section ${appState.section}, Row ${appState.row}, Seat ${appState.seat}
-- Global Wait Time: ${stats.avgWaitTime} mins
-- Congestion Level: ${stats.globalCongestion}
-- Safest Exit Route: Route B
-
-Keep answers concise, helpful, and friendly. Guide them gracefully to their destination or to food.
-      '''),
+      systemInstruction: _getSystemInstruction(),
     );
     _chat = _model.startChat();
   }
@@ -82,7 +73,7 @@ Keep answers concise, helpful, and friendly. Guide them gracefully to their dest
     _msgCtrl.clear();
     _scrollToBottom();
 
-    const apiKey = String.fromEnvironment('GEMINI_API_KEY', defaultValue: '');
+    final apiKey = dotenv.env['GEMINI_API_KEY'] ?? '';
     if (apiKey.isEmpty) {
       // Mock Response
       await Future.delayed(const Duration(milliseconds: 1500));
@@ -109,13 +100,43 @@ Keep answers concise, helpful, and friendly. Guide them gracefully to their dest
         _scrollToBottom();
       }
     } catch (e) {
-      if (mounted) {
-        setState(() {
-          _messages.add({'role': 'model', 'text': 'Oops! Something went wrong connecting to the AI. ($e)'});
-          _isLoading = false;
-        });
-        _scrollToBottom();
+      // Fallback mechanism if the model is not found (e.g. region or key limitations)
+      if (e.toString().contains('not found') || e.toString().contains('not supported')) {
+        try {
+          final fallbackModel = GenerativeModel(
+            model: 'gemini-pro',
+            apiKey: apiKey,
+            systemInstruction: _getSystemInstruction(),
+          );
+          final fallbackChat = fallbackModel.startChat(history: _chat.history.toList());
+          final response = await fallbackChat.sendMessage(Content.text(text));
+          
+          if (mounted) {
+            setState(() {
+              _model = fallbackModel; // Switch to fallback for future messages
+              _chat = fallbackChat;
+              _messages.add({'role': 'model', 'text': response.text ?? 'I could not process that.'});
+              _isLoading = false;
+            });
+            _scrollToBottom();
+          }
+          return;
+        } catch (fallbackErr) {
+           _showError(fallbackErr);
+           return;
+        }
       }
+      _showError(e);
+    }
+  }
+
+  void _showError(dynamic error) {
+    if (mounted) {
+      setState(() {
+        _messages.add({'role': 'model', 'text': 'Oops! Something went wrong connecting to the AI. ($error)'});
+        _isLoading = false;
+      });
+      _scrollToBottom();
     }
   }
 
@@ -251,5 +272,20 @@ Keep answers concise, helpful, and friendly. Guide them gracefully to their dest
         ],
       ),
     );
+  }
+
+  Content _getSystemInstruction() {
+    final appState = context.read<AppState>();
+    final stats = appState.venueStats;
+    return Content.system('''
+You are the VenueVantage Smart Assistant, an AI guide for users at a large sporting event.
+Current Context:
+- User Seat: Section ${appState.section}, Row ${appState.row}, Seat ${appState.seat}
+- Global Wait Time: ${stats.avgWaitMin} mins
+- Congestion Level: ${stats.capacityPct}%
+- Safest Exit Route: Route B
+
+Keep answers concise, helpful, and friendly. Guide them gracefully to their destination or to food.
+      ''');
   }
 }
