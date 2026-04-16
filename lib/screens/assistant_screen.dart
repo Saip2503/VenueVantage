@@ -55,7 +55,7 @@ class _AssistantScreenState extends State<AssistantScreen> {
     }
 
     _model = GenerativeModel(
-      model: 'gemini-1.5-flash-latest',
+      model: 'gemini-1.5-flash',
       apiKey: apiKey,
       systemInstruction: _getSystemInstruction(),
     );
@@ -90,7 +90,7 @@ class _AssistantScreenState extends State<AssistantScreen> {
       return;
     }
 
-    try {
+ try {
       final response = await _chat.sendMessage(Content.text(text));
       if (mounted) {
         setState(() {
@@ -101,29 +101,33 @@ class _AssistantScreenState extends State<AssistantScreen> {
       }
     } catch (e) {
       debugPrint("AI Assistant Error: $e");
-      // Fallback mechanism if the model is not found (e.g. region or key limitations)
+      
+      // FIX: Improved Fallback Logic
       if (e.toString().contains('not found') || e.toString().contains('not supported')) {
         try {
+          // If Flash fails, try Pro (ensure name is exactly 'gemini-1.5-pro')
           final fallbackModel = GenerativeModel(
             model: 'gemini-1.5-pro',
             apiKey: apiKey,
             systemInstruction: _getSystemInstruction(),
           );
+          
+          // Re-start chat with the history
           final fallbackChat = fallbackModel.startChat(history: _chat.history.toList());
           final response = await fallbackChat.sendMessage(Content.text(text));
           
           if (mounted) {
             setState(() {
-              _model = fallbackModel; // Switch to fallback for future messages
+              _model = fallbackModel;
               _chat = fallbackChat;
-              _messages.add({'role': 'model', 'text': response.text ?? 'I could not process that.'});
+              _messages.add({'role': 'model', 'text': response.text ?? 'Processed via fallback.'});
               _isLoading = false;
             });
             _scrollToBottom();
           }
           return;
         } catch (fallbackErr) {
-           _showError(fallbackErr);
+           _showError("Model not available in your region: $fallbackErr");
            return;
         }
       }
