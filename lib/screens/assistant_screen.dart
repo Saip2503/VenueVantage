@@ -41,8 +41,8 @@ class _AssistantScreenState extends State<AssistantScreen> {
     final appState = context.read<AppState>();
     final stats = appState.venueStats;
     
-    // Read from .env file securely
     final apiKey = dotenv.env['GEMINI_API_KEY'] ?? '';
+    debugPrint("AI Assistant: API Key loaded (length: ${apiKey.length})");
     
     if (apiKey.isEmpty) {
       setState(() {
