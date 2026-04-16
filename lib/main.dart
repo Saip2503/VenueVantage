@@ -1,0 +1,322 @@
+import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+
+import 'providers/app_state.dart';
+import 'screens/splash_screen.dart';
+import 'screens/home_screen.dart';
+import 'screens/map_screen.dart';
+import 'screens/order_screen.dart';
+import 'screens/alerts_screen.dart';
+import 'screens/settings_screen.dart';
+import 'theme/app_theme.dart';
+
+void main() {
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => AppState(),
+      child: const VenueVantageApp(),
+    ),
+  );
+}
+
+class VenueVantageApp extends StatelessWidget {
+  const VenueVantageApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = context.watch<AppState>().isDarkMode;
+    return MaterialApp(
+      title: 'VenueVantage',
+      debugShowCheckedModeBanner: false,
+      theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: isDark ? ThemeMode.dark : ThemeMode.light,
+      home: const SplashScreen(),
+    );
+  }
+}
+
+// ── Main Shell ────────────────────────────────────────────────────────────────
+
+class MainShell extends StatefulWidget {
+  const MainShell({super.key});
+  @override
+  State<MainShell> createState() => _MainShellState();
+}
+
+class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
+  int _selectedIndex = 0;
+  late AnimationController _fadeController;
+  late Animation<double> _fadeAnimation;
+
+  final List<Widget> _screens = const [
+    HomeScreen(),
+    MapScreen(),
+    OrderScreen(),
+    AlertsScreen(),
+    SettingsScreen(),
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _fadeController = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 220));
+    _fadeAnimation =
+        CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut);
+    _fadeController.forward();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<AppState>().refreshData();
+    });
+  }
+
+  void _onNavTap(int index) {
+    if (index == _selectedIndex) return;
+    _fadeController.reverse().then((_) {
+      setState(() => _selectedIndex = index);
+      _fadeController.forward();
+    });
+  }
+
+  @override
+  void dispose() {
+    _fadeController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = context.watch<AppState>().isDarkMode;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // ── Wide layout: sidebar ────────────────────────────────────────────
+        if (constraints.maxWidth >= 700) {
+          return Scaffold(
+            backgroundColor: AppTheme.bg(isDark),
+            body: Row(
+              children: [
+                _buildSidebar(isDark),
+                // Tonal shift — no VerticalDivider (1px borders banned)
+                // Sidebar: surfaceContainerLow  |  Content: surface
+                Expanded(
+                  child: FadeTransition(
+                    opacity: _fadeAnimation,
+                    child: _screens[_selectedIndex],
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+        // ── Mobile bottom nav ───────────────────────────────────────────────
+        return Scaffold(
+          backgroundColor: AppTheme.bg(isDark),
+          body: FadeTransition(
+              opacity: _fadeAnimation, child: _screens[_selectedIndex]),
+          bottomNavigationBar: _buildNavBar(isDark),
+        );
+      },
+    );
+  }
+
+  // ── Sidebar ───────────────────────────────────────────────────────────────
+  Widget _buildSidebar(bool isDark) {
+    return Container(
+      width: 200,
+      // surfaceContainerLow creates tonal separation from the surface content area
+      color: AppTheme.surfaceContainerLow,
+      child: SafeArea(
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: ShaderMask(
+                  shaderCallback: (bounds) =>
+                      AppTheme.ctaGradient.createShader(bounds),
+                  blendMode: BlendMode.srcIn,
+                  child: Text(
+                    'VenueVantage',
+                    style: GoogleFonts.inter(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white, // painted over by ShaderMask
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            // Tonal separator — a simple container height instead of Divider
+            Container(height: 1, color: AppTheme.outlineVariant.withOpacity(0.12)),
+            const SizedBox(height: 8),
+            ...List.generate(_navItems.length, (i) {
+              final isSelected = _selectedIndex == i;
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+                child: GestureDetector(
+                  onTap: () => _onNavTap(i),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 220),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? AppTheme.primary.withOpacity(0.12)
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Row(
+                      children: [
+                        AnimatedScale(
+                          scale: isSelected ? 1.1 : 1.0,
+                          duration: const Duration(milliseconds: 220),
+                          child: Icon(
+                            _navItems[i].icon,
+                            size: 20,
+                            color: isSelected
+                                ? AppTheme.primary
+                                : AppTheme.outline,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Text(
+                          _navItems[i].label,
+                          style: GoogleFonts.inter(
+                            fontSize: 13,
+                            fontWeight:
+                                isSelected ? FontWeight.w700 : FontWeight.w400,
+                            color: isSelected
+                                ? AppTheme.primary
+                                : AppTheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }),
+          ],
+        ),
+      ),
+    );
+  }
+
+  static const _navItems = [
+    _NavItem(icon: Icons.dashboard_rounded, label: 'Home'),
+    _NavItem(icon: Icons.map_rounded, label: 'Map'),
+    _NavItem(icon: Icons.shopping_bag_rounded, label: 'Order'),
+    _NavItem(icon: Icons.notifications_rounded, label: 'Alerts'),
+    _NavItem(icon: Icons.settings_rounded, label: 'Settings'),
+  ];
+
+  // ── Bottom Nav ────────────────────────────────────────────────────────────
+  Widget _buildNavBar(bool isDark) {
+    return Container(
+      // surfaceContainer for bottom nav — tonal separation from surface bg
+      color: AppTheme.surfaceContainer,
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: List.generate(_navItems.length, (i) {
+              final hasNotif =
+                  i == 3 ? context.watch<AppState>().hasUnreadAlerts : false;
+              return Semantics(
+                label: _navItems[i].label,
+                button: true,
+                child: _NavBarButton(
+                  item: _navItems[i],
+                  isSelected: _selectedIndex == i,
+                  onTap: () => _onNavTap(i),
+                  hasNotification: hasNotif,
+                  isDark: isDark,
+                ),
+              );
+            }),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _NavItem {
+  final IconData icon;
+  final String label;
+  const _NavItem({required this.icon, required this.label});
+}
+
+class _NavBarButton extends StatelessWidget {
+  final _NavItem item;
+  final bool isSelected, hasNotification, isDark;
+  final VoidCallback onTap;
+
+  const _NavBarButton({
+    required this.item,
+    required this.isSelected,
+    required this.onTap,
+    this.hasNotification = false,
+    required this.isDark,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 220),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? AppTheme.primary.withOpacity(0.12)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Stack(clipBehavior: Clip.none, children: [
+              AnimatedScale(
+                scale: isSelected ? 1.15 : 1.0,
+                duration: const Duration(milliseconds: 220),
+                child: Icon(
+                  item.icon,
+                  size: 22,
+                  color: isSelected ? AppTheme.primary : AppTheme.outline,
+                ),
+              ),
+              if (hasNotification)
+                Positioned(
+                  top: -4,
+                  right: -4,
+                  child: Container(
+                    width: 8,
+                    height: 8,
+                    decoration: const BoxDecoration(
+                      color: AppTheme.error,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+            ]),
+            const SizedBox(height: 3),
+            AnimatedDefaultTextStyle(
+              duration: const Duration(milliseconds: 220),
+              style: GoogleFonts.inter(
+                fontSize: 10,
+                fontWeight:
+                    isSelected ? FontWeight.w600 : FontWeight.w400,
+                color: isSelected ? AppTheme.primary : AppTheme.outline,
+              ),
+              child: Text(item.label),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

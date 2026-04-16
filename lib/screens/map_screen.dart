@@ -1,0 +1,635 @@
+import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+
+import '../providers/app_state.dart';
+import '../theme/app_theme.dart';
+
+class MapScreen extends StatefulWidget {
+  const MapScreen({super.key});
+
+  @override
+  State<MapScreen> createState() => _MapScreenState();
+}
+
+class _MapScreenState extends State<MapScreen> {
+  POIType? _filterType;
+
+  static const Map<POIType, _POIStyle> _styles = {
+    POIType.food: _POIStyle(icon: Icons.fastfood_rounded, color: Color(0xFFF59E0B), label: 'Food'),
+    POIType.restroom: _POIStyle(icon: Icons.wc_rounded, color: Color(0xFF3B82F6), label: 'Restroom'),
+    POIType.merch: _POIStyle(icon: Icons.shopping_bag_rounded, color: Color(0xFF8B5CF6), label: 'Merch'),
+    POIType.exit: _POIStyle(icon: Icons.exit_to_app_rounded, color: Color(0xFF10B981), label: 'Exit'),
+    POIType.medical: _POIStyle(icon: Icons.local_hospital_rounded, color: Color(0xFFEF4444), label: 'Medical'),
+    POIType.parking: _POIStyle(icon: Icons.local_parking_rounded, color: Color(0xFF06B6D4), label: 'Parking'),
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Column(
+        children: [
+          _buildHeader(),
+          _buildFilterBar(),
+          Expanded(
+            child: Stack(
+              children: [
+                _buildMapArea(context),
+                _buildPOIDetailsSheet(context),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
+      child: Row(
+        children: [
+          Text(
+            'Venue Map',
+            style: GoogleFonts.inter(
+              fontSize: 24,
+              fontWeight: FontWeight.w800,
+              color: AppTheme.textPrimary,
+            ),
+          ),
+          const Spacer(),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: AppTheme.accentGreen.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: AppTheme.accentGreen.withOpacity(0.4)),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 6,
+                  height: 6,
+                  decoration: const BoxDecoration(
+                    color: AppTheme.accentGreen,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  'Live Data',
+                  style: GoogleFonts.inter(
+                    color: AppTheme.accentGreen,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFilterBar() {
+    final types = [null, ...POIType.values];
+    return SizedBox(
+      height: 38,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        itemCount: types.length,
+        itemBuilder: (ctx, i) {
+          final type = types[i];
+          final label = type == null ? 'All' : _styles[type]!.label;
+          final isSelected = _filterType == type;
+          final color = type == null ? AppTheme.accentBlue : _styles[type]!.color;
+
+          return Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              child: GestureDetector(
+                onTap: () => setState(() => _filterType = type),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                  decoration: BoxDecoration(
+                    color: isSelected ? color.withOpacity(0.2) : AppTheme.bgCard,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: isSelected ? color : AppTheme.borderColor,
+                    ),
+                  ),
+                  child: Text(
+                    label,
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                      color: isSelected ? color : AppTheme.textMuted,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildMapArea(BuildContext context) {
+    return Consumer<AppState>(
+      builder: (ctx, state, _) {
+        final pois = _filterType == null
+            ? state.pointsOfInterest
+            : state.pointsOfInterest.where((p) => p.type == _filterType).toList();
+
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+          child: Container(
+            decoration: BoxDecoration(
+              color: AppTheme.bgCard,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: AppTheme.borderColor),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: LayoutBuilder(
+                builder: (ctx, constraints) {
+                  return Stack(
+                    children: [
+                      // Stadium background
+                      _buildStadiumBackground(constraints),
+                      // POI markers
+                      ...pois.map(
+                        (poi) => Positioned(
+                          left: poi.x * constraints.maxWidth - 18,
+                          top: poi.y * constraints.maxHeight - 18,
+                          child: _POIMarker(
+                            poi: poi,
+                            style: _styles[poi.type]!,
+                            isSelected: state.selectedPOI?.id == poi.id,
+                            onTap: () => state.selectPOI(
+                              state.selectedPOI?.id == poi.id ? null : poi,
+                            ),
+                          ),
+                        ),
+                      ),
+                      // "You are here" marker
+                      Positioned(
+                        left: 0.45 * constraints.maxWidth - 10,
+                        top: 0.5 * constraints.maxHeight - 10,
+                        child: _YouAreHereMarker(),
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildStadiumBackground(BoxConstraints constraints) {
+    return SizedBox(
+      width: constraints.maxWidth,
+      height: constraints.maxHeight,
+      child: CustomPaint(
+        painter: _StadiumPainter(),
+      ),
+    );
+  }
+
+  Widget _buildPOIDetailsSheet(BuildContext context) {
+    return Consumer<AppState>(
+      builder: (ctx, state, _) {
+        final poi = state.selectedPOI;
+        if (poi == null) return const SizedBox.shrink();
+
+        final style = _styles[poi.type]!;
+        final crowdColor = poi.crowdLevel > 65
+            ? AppTheme.accentRed
+            : poi.crowdLevel > 35
+                ? AppTheme.accentAmber
+                : AppTheme.accentGreen;
+
+        return Positioned(
+          bottom: 24,
+          left: 24,
+          right: 24,
+          child: Material(
+            color: Colors.transparent,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeOutCubic,
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                color: AppTheme.bgElevated,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: style.color.withOpacity(0.4)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.5),
+                    blurRadius: 20,
+                    offset: const Offset(0, 8),
+                  ),
+                  BoxShadow(
+                    color: style.color.withOpacity(0.15),
+                    blurRadius: 20,
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: style.color.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(style.icon, color: style.color, size: 22),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              poi.name,
+                              style: GoogleFonts.inter(
+                                color: AppTheme.textPrimary,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 15,
+                              ),
+                            ),
+                            Text(
+                              style.label,
+                              style: GoogleFonts.inter(
+                                color: style.color,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: () => state.selectPOI(null),
+                        child: Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: AppTheme.bgSurface,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(Icons.close_rounded,
+                              color: AppTheme.textMuted, size: 16),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  Row(
+                    children: [
+                      _POIStatChip(
+                        label: 'Wait Time',
+                        value: poi.waitTime,
+                        icon: Icons.timer_rounded,
+                        color: AppTheme.accentBlue,
+                      ),
+                      const SizedBox(width: 10),
+                      _POIStatChip(
+                        label: 'Crowd Level',
+                        value: '${poi.crowdLevel}%',
+                        icon: Icons.people_rounded,
+                        color: crowdColor,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: () {},
+                          icon: const Icon(Icons.navigation_rounded, size: 14),
+                          label: Text(
+                            'Navigate',
+                            style: GoogleFonts.inter(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: style.color,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  // Crowd bar
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('Crowd Density',
+                              style: GoogleFonts.inter(
+                                  color: AppTheme.textMuted, fontSize: 11)),
+                          Text('${poi.crowdLevel}%',
+                              style: GoogleFonts.inter(
+                                  color: crowdColor,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600)),
+                        ],
+                      ),
+                      const SizedBox(height: 5),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(4),
+                        child: LinearProgressIndicator(
+                          value: poi.crowdLevel / 100,
+                          minHeight: 6,
+                          backgroundColor: AppTheme.bgSurface,
+                          valueColor: AlwaysStoppedAnimation(crowdColor),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _POIStatChip extends StatelessWidget {
+  final String label;
+  final String value;
+  final IconData icon;
+  final Color color;
+
+  const _POIStatChip({
+    required this.label,
+    required this.value,
+    required this.icon,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: color.withOpacity(0.3)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(label,
+                style: GoogleFonts.inter(
+                    color: AppTheme.textMuted,
+                    fontSize: 9,
+                    fontWeight: FontWeight.w500)),
+            const SizedBox(height: 2),
+            Text(value,
+                style: GoogleFonts.inter(
+                    color: color,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _POIMarker extends StatefulWidget {
+  final PointOfInterest poi;
+  final _POIStyle style;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _POIMarker({
+    required this.poi,
+    required this.style,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  State<_POIMarker> createState() => _POIMarkerState();
+}
+
+class _POIMarkerState extends State<_POIMarker>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnim;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    )..repeat(reverse: true);
+    _scaleAnim = Tween(begin: 0.9, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: widget.onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        width: 36,
+        height: 36,
+        decoration: BoxDecoration(
+          color: widget.isSelected
+              ? widget.style.color
+              : widget.style.color.withOpacity(0.85),
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: widget.style.color.withOpacity(widget.isSelected ? 0.6 : 0.3),
+              blurRadius: widget.isSelected ? 14 : 6,
+              spreadRadius: widget.isSelected ? 3 : 0,
+            ),
+          ],
+          border: Border.all(
+            color: Colors.white.withOpacity(widget.isSelected ? 0.8 : 0.3),
+            width: 2,
+          ),
+        ),
+        child: Icon(widget.style.icon, color: Colors.white, size: 16),
+      ),
+    );
+  }
+}
+
+class _YouAreHereMarker extends StatefulWidget {
+  @override
+  State<_YouAreHereMarker> createState() => _YouAreHereMarkerState();
+}
+
+class _YouAreHereMarkerState extends State<_YouAreHereMarker>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _pulse;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    )..repeat(reverse: true);
+    _pulse = Tween(begin: 0.7, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: _pulse,
+      child: Container(
+        width: 20,
+        height: 20,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.white.withOpacity(0.5),
+              blurRadius: 12,
+              spreadRadius: 3,
+            ),
+          ],
+          border: Border.all(color: AppTheme.accentBlue, width: 3),
+        ),
+      ),
+    );
+  }
+}
+
+class _StadiumPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final Paint outerPaint = Paint()
+      ..color = const Color(0xFF1A2235)
+      ..style = PaintingStyle.fill;
+
+    final Paint trackPaint = Paint()
+      ..color = const Color(0xFF0D1520)
+      ..style = PaintingStyle.fill;
+
+    final Paint fieldPaint = Paint()
+      ..color = const Color(0xFF14532D).withOpacity(0.7)
+      ..style = PaintingStyle.fill;
+
+    final Paint linePaint = Paint()
+      ..color = const Color(0xFF3B82F6).withOpacity(0.12)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1;
+
+    // Outer stadium
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(0, 0, size.width, size.height),
+        const Radius.circular(20),
+      ),
+      outerPaint,
+    );
+
+    // Running track (oval)
+    final rect = Rect.fromCenter(
+      center: Offset(size.width / 2, size.height / 2),
+      width: size.width * 0.75,
+      height: size.height * 0.65,
+    );
+    canvas.drawOval(rect, trackPaint);
+
+    // Field
+    final fieldRect = Rect.fromCenter(
+      center: Offset(size.width / 2, size.height / 2),
+      width: size.width * 0.55,
+      height: size.height * 0.45,
+    );
+    canvas.drawRect(fieldRect, fieldPaint);
+
+    // Center line
+    canvas.drawLine(
+      Offset(size.width / 2, fieldRect.top),
+      Offset(size.width / 2, fieldRect.bottom),
+      linePaint..strokeWidth = 1.5,
+    );
+
+    // Center circle
+    canvas.drawCircle(
+      Offset(size.width / 2, size.height / 2),
+      size.height * 0.08,
+      Paint()
+        ..color = Colors.white.withOpacity(0.08)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5,
+    );
+
+    // Grid lines for the venue seating area
+    final gridPaint = Paint()
+      ..color = Colors.white.withOpacity(0.03)
+      ..strokeWidth = 0.8;
+
+    for (int i = 1; i < 8; i++) {
+      canvas.drawLine(
+        Offset(size.width * i / 8, 0),
+        Offset(size.width * i / 8, size.height),
+        gridPaint,
+      );
+    }
+    for (int i = 1; i < 6; i++) {
+      canvas.drawLine(
+        Offset(0, size.height * i / 6),
+        Offset(size.width, size.height * i / 6),
+        gridPaint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(_) => false;
+}
+
+class _POIStyle {
+  final IconData icon;
+  final Color color;
+  final String label;
+  const _POIStyle({required this.icon, required this.color, required this.label});
+}
