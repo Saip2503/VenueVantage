@@ -55,7 +55,7 @@ class _AssistantScreenState extends State<AssistantScreen> {
     }
 
     _model = GenerativeModel(
-      model: 'gemini-1.5-flash-latest',
+      model: 'gemini-1.5-flash',
       apiKey: apiKey,
       systemInstruction: _getSystemInstruction(),
     );
@@ -100,11 +100,12 @@ class _AssistantScreenState extends State<AssistantScreen> {
         _scrollToBottom();
       }
     } catch (e) {
+      debugPrint("AI Assistant Error: $e");
       // Fallback mechanism if the model is not found (e.g. region or key limitations)
       if (e.toString().contains('not found') || e.toString().contains('not supported')) {
         try {
           final fallbackModel = GenerativeModel(
-            model: 'gemini-pro',
+            model: 'gemini-1.5-pro',
             apiKey: apiKey,
             systemInstruction: _getSystemInstruction(),
           );
