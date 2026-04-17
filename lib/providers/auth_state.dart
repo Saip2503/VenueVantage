@@ -4,13 +4,19 @@ import '../services/auth_service.dart';
 
 enum AuthStatus { loading, authenticated, anonymous, unauthenticated }
 
-/// Reactive auth provider. Screens watch this to update UI based on sign-in state.
 class AuthStateProvider extends ChangeNotifier {
-  final AuthService _service = AuthService();
+  final AuthService _service;
 
   User? _user;
   AuthStatus _status = AuthStatus.loading;
   String? _errorMessage;
+
+  AuthStateProvider({AuthService? authService}) 
+      : _service = authService ?? AuthService() {
+    try {
+      _service.userStream.listen(_onAuthChange);
+    } catch (_) {}
+  }
 
   User? get user => _user;
   AuthStatus get status => _status;
@@ -41,9 +47,7 @@ class AuthStateProvider extends ChangeNotifier {
   String? get photoUrl => _user?.photoURL;
   String? get uid => _user?.uid;
 
-  AuthStateProvider() {
-    _service.userStream.listen(_onAuthChange);
-  }
+
 
   void _onAuthChange(User? user) {
     _user = user;

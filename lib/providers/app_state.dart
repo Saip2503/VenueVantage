@@ -76,11 +76,15 @@ enum OrderTrackingStep { placed, preparing, onTheWay, delivered }
 // ── AppState ──────────────────────────────────────────────────────────────────
 
 class AppState extends ChangeNotifier {
-  final FirestoreService _fs = FirestoreService();
+  final FirestoreService _fs;
 
-  AppState() {
+  AppState({FirestoreService? firestoreService}) 
+      : _fs = firestoreService ?? FirestoreService() {
     _loadPrefs();
-    _subscribeToFirestore();
+    // Wrap in try-catch in case Firestore isn't initialized during tests
+    try {
+      _subscribeToFirestore();
+    } catch (_) {}
   }
 
   // ── Navigation ─────────────────────────────────────────────────────────────

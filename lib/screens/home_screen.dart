@@ -10,6 +10,10 @@ import '../theme/app_theme.dart';
 import '../widgets/glass_card.dart';
 import 'assistant_screen.dart';
 
+/// The main entry point for the VenueVantage dashboard.
+/// This screen aggregates data from [AppState] including dynamic POIs,
+/// AI assistant navigation, and live crowd density stats to provide
+/// a unified stadium experience for the user.
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
@@ -521,8 +525,11 @@ class HomeScreen extends StatelessWidget {
           children: [
             _SectionTitle('Your Stadium Guide'),
             const SizedBox(height: 12),
-            GestureDetector(
-              onTap: () {
+            Semantics(
+              label: 'Open Venue AI Assistant for help with food, wait times, or directions',
+              button: true,
+              child: GestureDetector(
+                onTap: () {
                 Navigator.of(context).push(
                   MaterialPageRoute(builder: (_) => const AssistantScreen()),
                 );
@@ -589,6 +596,7 @@ class HomeScreen extends StatelessWidget {
                   ],
                 ),
               ),
+            ),
             ),
           ],
         ),

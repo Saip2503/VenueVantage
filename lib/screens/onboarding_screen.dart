@@ -201,18 +201,43 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
   }
 
   void _confirm() {
+    final sectionRaw = _sectionCtrl.text.trim();
+    final rowRaw = _rowCtrl.text.trim();
+    final seatRaw = _seatCtrl.text.trim();
+
+    if (sectionRaw.isEmpty || rowRaw.isEmpty || seatRaw.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Please fill out all seat fields.', style: GoogleFonts.inter()),
+          backgroundColor: AppTheme.error,
+        ),
+      );
+      return;
+    }
+
+    final regex = RegExp(r'^[a-zA-Z0-9]+$');
+    if (!regex.hasMatch(sectionRaw) || !regex.hasMatch(rowRaw) || !regex.hasMatch(seatRaw)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Use only letters and numbers for seat info.', style: GoogleFonts.inter()),
+          backgroundColor: AppTheme.error,
+        ),
+      );
+      return;
+    }
+
     final state = context.read<AppState>();
     final auth = context.read<AuthStateProvider>();
 
     if (auth.user != null) {
       state.setSeatInfoWithSync(
         auth.user!.uid,
-        _sectionCtrl.text,
-        _rowCtrl.text,
-        _seatCtrl.text,
+        sectionRaw,
+        rowRaw,
+        seatRaw,
       );
     } else {
-      state.setSeatInfo(_sectionCtrl.text, _rowCtrl.text, _seatCtrl.text);
+      state.setSeatInfo(sectionRaw, rowRaw, seatRaw);
     }
 
     state.completeOnboarding();

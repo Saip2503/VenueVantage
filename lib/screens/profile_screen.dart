@@ -272,9 +272,12 @@ class ProfileScreen extends StatelessWidget {
               ],
             ),
           ),
-          GestureDetector(
-            onTap: () {
-              Navigator.of(context).push(
+          Semantics(
+            label: 'Change your seat selection',
+            button: true,
+            child: GestureDetector(
+              onTap: () {
+                Navigator.of(context).push(
                 MaterialPageRoute(builder: (_) => const OnboardingScreen()),
               );
             },
@@ -293,6 +296,7 @@ class ProfileScreen extends StatelessWidget {
                 ),
               ),
             ),
+          ),
           ),
         ],
       ),

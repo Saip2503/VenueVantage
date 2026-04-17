@@ -3,6 +3,9 @@ import 'places_service.dart';
 import 'weather_service.dart';
 import '../data/venue_data.dart';
 
+/// Repository layer coordinating all external Google Cloud API services.
+/// It abstracts away direct [MapsService], [PlacesService], and [WeatherService]
+/// invocations, providing a clean surface for [AppState] to fetch dynamic stadium data.
 class ApiRepository {
   final MapsService _maps = MapsService();
   final PlacesService _places = PlacesService();

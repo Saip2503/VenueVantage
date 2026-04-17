@@ -164,8 +164,11 @@ class _LoginScreenState extends State<LoginScreen>
                 // ── Google Sign-In CTA ────────────────────────────────────
                 SizedBox(
                   width: double.infinity,
-                  child: GestureDetector(
-                    onTap: _signingIn ? null : _handleGoogleSignIn,
+                  child: Semantics(
+                    button: true,
+                    label: 'Sign in with Google',
+                    child: GestureDetector(
+                      onTap: _signingIn ? null : _handleGoogleSignIn,
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 200),
                       padding: const EdgeInsets.symmetric(vertical: 16),
@@ -232,16 +235,20 @@ class _LoginScreenState extends State<LoginScreen>
                                 ),
                               ],
                             ),
-                    ),
-                  ),
-                ),
+                    ), // closes AnimatedContainer
+                  ), // closes GestureDetector
+                ), // closes Semantics
+                ), // closes SizedBox
                 const SizedBox(height: 14),
 
                 // ── Guest ghost button ────────────────────────────────────
                 SizedBox(
                   width: double.infinity,
-                  child: GestureDetector(
-                    onTap: _signingIn ? null : _handleGuestSignIn,
+                  child: Semantics(
+                    button: true,
+                    label: 'Continue as Guest',
+                    child: GestureDetector(
+                      onTap: _signingIn ? null : _handleGuestSignIn,
                     child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       decoration: BoxDecoration(
@@ -259,9 +266,10 @@ class _LoginScreenState extends State<LoginScreen>
                           fontSize: 15,
                         ),
                       ),
-                    ),
-                  ),
-                ),
+                    ), // closes Container
+                  ), // closes GestureDetector
+                ), // closes Semantics
+                ), // closes SizedBox
 
                 const Spacer(flex: 1),
 
