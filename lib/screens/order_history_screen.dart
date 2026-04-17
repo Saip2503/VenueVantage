@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'dart:math';
 
 import '../providers/auth_state.dart';
+import '../providers/app_state.dart';
 import '../services/firestore_service.dart';
 import '../theme/app_theme.dart';
 
@@ -13,6 +15,7 @@ class OrderHistoryScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthStateProvider>();
+    final appState = context.watch<AppState>();
     final user = auth.user;
 
     return Scaffold(
@@ -38,35 +41,147 @@ class OrderHistoryScreen extends StatelessWidget {
           ),
         ),
       ),
-      body: user == null
-          ? const _UnauthedView()
-          : StreamBuilder<List<OrderModel>>(
-              stream: FirestoreService().ordersStream(user.uid),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(
-                    child: CircularProgressIndicator(color: AppTheme.primary),
-                  );
-                }
-                if (snapshot.hasError) {
-                  return _ErrorView(error: snapshot.error.toString());
-                }
-                final orders = snapshot.data ?? [];
-                if (orders.isEmpty) return const _NoOrdersView();
-
-                return ListView.builder(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 10,
-                  ),
-                  itemCount: orders.length,
-                  itemBuilder: (context, index) {
-                    final order = orders[index];
-                    return _OrderCard(order: order);
-                  },
-                );
-              },
+      body: Column(
+        children: [
+          if (appState.activeOrderId != null)
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: _ActiveOrderCard(
+                orderId: appState.activeOrderId!,
+                step: appState.orderStep,
+              ),
             ),
+          Expanded(
+            child: user == null
+                ? const _UnauthedView()
+                : StreamBuilder<List<OrderModel>>(
+                    stream: FirestoreService().ordersStream(user.uid),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(
+                          child: CircularProgressIndicator(color: AppTheme.primary),
+                        );
+                      }
+                      if (snapshot.hasError) {
+                        return _ErrorView(error: snapshot.error.toString());
+                      }
+                      final orders = snapshot.data ?? [];
+                      if (orders.isEmpty && appState.activeOrderId == null) {
+                        return const _NoOrdersView();
+                      }
+
+                      return ListView.builder(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 10,
+                        ),
+                        itemCount: orders.length,
+                        itemBuilder: (context, index) {
+                          final order = orders[index];
+                          // Skip active order if it's already shown at the top
+                          if (order.id == appState.activeOrderId) return const SizedBox.shrink();
+                          return _OrderCard(order: order);
+                        },
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ActiveOrderCard extends StatelessWidget {
+  final String orderId;
+  final OrderTrackingStep step;
+
+  const _ActiveOrderCard({required this.orderId, required this.step});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppTheme.primary.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(color: AppTheme.primary.withOpacity(0.2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.timer_rounded, color: AppTheme.primary, size: 20),
+              const SizedBox(width: 10),
+              Text(
+                'LIVE ORDER',
+                style: GoogleFonts.inter(
+                  color: AppTheme.primary,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 12,
+                  letterSpacing: 1.2,
+                ),
+              ),
+              const Spacer(),
+              Text(
+                '#${orderId.substring(0, min(orderId.length, 6)).toUpperCase()}',
+                style: GoogleFonts.inter(
+                  color: AppTheme.onSurface,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 13,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          _buildProgressIndicator(),
+          const SizedBox(height: 16),
+          Text(
+            _getStepName(),
+            style: GoogleFonts.inter(
+              color: AppTheme.onSurface,
+              fontWeight: FontWeight.w700,
+              fontSize: 16,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Estimated delivery: 12 min',
+            style: GoogleFonts.inter(
+              color: AppTheme.onSurfaceVariant,
+              fontSize: 13,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _getStepName() {
+    switch (step) {
+      case OrderTrackingStep.placed: return 'Order Placed';
+      case OrderTrackingStep.preparing: return 'Kitchen Preparing';
+      case OrderTrackingStep.onTheWay: return 'Runner is coming!';
+      case OrderTrackingStep.delivered: return 'Delivered to Seat';
+    }
+  }
+
+  Widget _buildProgressIndicator() {
+    return Row(
+      children: List.generate(4, (i) {
+        final isActive = i <= step.index;
+        return Expanded(
+          child: Container(
+            height: 4,
+            margin: EdgeInsets.only(right: i < 3 ? 4 : 0),
+            decoration: BoxDecoration(
+              color: isActive ? AppTheme.primary : AppTheme.outlineVariant,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+        );
+      }),
     );
   }
 }

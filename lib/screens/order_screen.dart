@@ -1,11 +1,13 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/app_state.dart';
 import '../theme/app_theme.dart';
 import '../providers/auth_state.dart';
+import 'order_history_screen.dart';
 
 class OrderScreen extends StatefulWidget {
   const OrderScreen({super.key});
@@ -268,7 +270,9 @@ class _OrderScreenState extends State<OrderScreen> {
       isProcessing: _isProcessing,
       onClose: () => setState(() => _showCart = false),
       onCheckout: () async {
+        if (_isProcessing) return;
         setState(() => _isProcessing = true);
+        await HapticFeedback.mediumImpact();
         try {
           await context.read<AppState>().placeOrder(uid);
           if (mounted) {
@@ -279,8 +283,15 @@ class _OrderScreenState extends State<OrderScreen> {
             });
           }
         } catch (e) {
-          if (mounted) setState(() => _isProcessing = false);
-          debugPrint("UI Checkout Error: $e");
+          if (mounted) {
+            setState(() => _isProcessing = false);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Could not place order: $e'),
+                backgroundColor: AppTheme.error,
+              ),
+            );
+          }
         }
       },
     );
@@ -352,6 +363,37 @@ class _OrderScreenState extends State<OrderScreen> {
                 ),
               ),
               const SizedBox(height: 40),
+              // View History button — primary fill
+              SizedBox(
+                width: double.infinity,
+                child: GestureDetector(
+                  onTap: () {
+                    setState(() => _orderPlaced = false);
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const OrderHistoryScreen(),
+                      ),
+                    );
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    decoration: BoxDecoration(
+                      gradient: AppTheme.ctaGradient,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      'View Order History',
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.inter(
+                        color: AppTheme.onPrimary,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
               // Ghost button — no fill
               SizedBox(
                 width: double.infinity,
@@ -688,16 +730,18 @@ class _CartOverlay extends StatelessWidget {
                           SizedBox(
                             width: double.infinity,
                             child: GestureDetector(
-                              onTap: onCheckout,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                    vertical: 16),
-                                decoration: const BoxDecoration(
-                                  gradient: AppTheme.ctaGradient,
-                                  borderRadius:
-                                      BorderRadius.all(Radius.circular(4)),
-                                ),
-                                child: isProcessing
+                              onTap: isProcessing ? null : onCheckout,
+                              child: Opacity(
+                                opacity: isProcessing ? 0.6 : 1.0,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      vertical: 16),
+                                  decoration: const BoxDecoration(
+                                    gradient: AppTheme.ctaGradient,
+                                    borderRadius:
+                                        BorderRadius.all(Radius.circular(4)),
+                                  ),
+                                  child: isProcessing
                                     ? const Center(
                                         child: SizedBox(
                                           width: 20,
@@ -717,6 +761,7 @@ class _CartOverlay extends StatelessWidget {
                                           fontSize: 15,
                                         ),
                                       ),
+                                ),
                               ),
                             ),
                           ),

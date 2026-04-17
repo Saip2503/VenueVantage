@@ -108,6 +108,25 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  // ── Preferences ────────────────────────────────────────────────────────────
+  bool _notificationsEnabled = true;
+  bool _hapticsEnabled = true;
+
+  bool get notificationsEnabled => _notificationsEnabled;
+  bool get hapticsEnabled => _hapticsEnabled;
+
+  void toggleNotifications(bool value) {
+    _notificationsEnabled = value;
+    _prefs?.setBool('notifications_enabled', value);
+    notifyListeners();
+  }
+
+  void toggleHaptics(bool value) {
+    _hapticsEnabled = value;
+    _prefs?.setBool('haptics_enabled', value);
+    notifyListeners();
+  }
+
   // ── Seat Info ──────────────────────────────────────────────────────────────
   String _section = '14';
   String _row = 'C';
@@ -157,6 +176,8 @@ class AppState extends ChangeNotifier {
     _section = _prefs?.getString('section') ?? '14';
     _row = _prefs?.getString('row') ?? 'C';
     _seat = _prefs?.getString('seat') ?? '3';
+    _notificationsEnabled = _prefs?.getBool('notifications_enabled') ?? true;
+    _hapticsEnabled = _prefs?.getBool('haptics_enabled') ?? true;
     _favourites = Set.from(_prefs?.getStringList('favourites') ?? []);
     notifyListeners();
   }

@@ -16,174 +16,261 @@ class SettingsScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: AppTheme.surface,
         elevation: 0,
-        iconTheme: const IconThemeData(color: AppTheme.onSurface),
-      ),
-      body: SafeArea(
-        child: Consumer2<AppState, AuthStateProvider>(
-          builder: (ctx, state, auth, _) {
-            return CustomScrollView(
-              slivers: [
-                _buildHeader(auth),
-                _buildPrefsSection(state),
-                _buildAboutSection(context, auth),
-              ],
-            );
-          },
+        centerTitle: true,
+        title: Text(
+          'Settings',
+          style: GoogleFonts.inter(
+            color: AppTheme.onSurface,
+            fontWeight: FontWeight.w700,
+            fontSize: 16,
+          ),
+        ),
+        leading: IconButton(
+          icon: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            size: 20,
+            color: AppTheme.onSurface,
+          ),
+          onPressed: () => Navigator.pop(context),
         ),
       ),
-    );
-  }
-
-  // ── Header ────────────────────────────────────────────────────────────────
-  SliverToBoxAdapter _buildHeader(AuthStateProvider auth) {
-    return SliverToBoxAdapter(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          ShaderMask(
-            shaderCallback: (bounds) =>
-                AppTheme.ctaGradient.createShader(bounds),
-            blendMode: BlendMode.srcIn,
-            child: Text(
-              'Settings',
-              style: GoogleFonts.inter(
-                fontSize: 28,
-                fontWeight: FontWeight.w800,
-                color: Colors.white,
-                letterSpacing: -0.02 * 28,
-              ),
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Personalise your VenueVantage experience',
-            style: GoogleFonts.inter(
-              fontSize: 13,
-              color: AppTheme.outline,
-            ),
-          ),
-          const SizedBox(height: 32),
-        ]),
+      body: Consumer2<AppState, AuthStateProvider>(
+        builder: (ctx, state, auth, _) {
+          return ListView(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+            children: [
+              _buildAccountHeader(auth),
+              const SizedBox(height: 32),
+              _SectionLabel('PREFERENCES'),
+              const SizedBox(height: 12),
+              _buildPrefsCard(state),
+              const SizedBox(height: 32),
+              _SectionLabel('SECURITY'),
+              const SizedBox(height: 12),
+              _buildSecurityCard(),
+              const SizedBox(height: 32),
+              _SectionLabel('SUPPORT & LEGAL'),
+              const SizedBox(height: 12),
+              _buildSupportCard(context),
+              const SizedBox(height: 40),
+              _buildSignOutButton(context, auth),
+              const SizedBox(height: 48),
+              _buildVersionInfo(),
+              const SizedBox(height: 20),
+            ],
+          );
+        },
       ),
     );
   }
 
-  // ── Preferences ────────────────────────────────────────────────────────────
-  SliverToBoxAdapter _buildPrefsSection(AppState state) {
-    return SliverToBoxAdapter(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        child: Column(children: [
-          _SectionLabel('PREFERENCES'),
-          const SizedBox(height: 8),
-          Container(
-            decoration: BoxDecoration(
-              color: AppTheme.surfaceContainer,
-              borderRadius: BorderRadius.circular(4),
-            ),
-            child: Column(children: [
-              _ToggleTile(
-                icon: Icons.dark_mode_rounded,
-                title: 'Dark Mode',
-                subtitle: 'Toggle light / dark appearance',
-                value: state.isDarkMode,
-                onChanged: (_) => state.toggleTheme(),
-              ),
-              Container(
-                  height: 1,
-                  color: AppTheme.outlineVariant.withOpacity(0.10)),
-              _ToggleTile(
-                icon: Icons.notifications_active_rounded,
-                title: 'Push Notifications',
-                subtitle: 'Receive crowd and event alerts',
-                value: true,
-                onChanged: (_) {},
-              ),
-              Container(
-                  height: 1,
-                  color: AppTheme.outlineVariant.withOpacity(0.10)),
-              _ToggleTile(
-                icon: Icons.vibration_rounded,
-                title: 'Haptic Feedback',
-                subtitle: 'Vibrate on key interactions',
-                value: false,
-                onChanged: (_) {},
-              ),
-            ]),
-          ),
-          const SizedBox(height: 20),
-        ]),
+  // ── Account Header ────────────────────────────────────────────────────────
+  Widget _buildAccountHeader(AuthStateProvider auth) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceContainer,
+        borderRadius: BorderRadius.circular(16),
       ),
-    );
-  }
-
-  // ── About ──────────────────────────────────────────────────────────────────
-  SliverToBoxAdapter _buildAboutSection(
-      BuildContext context, AuthStateProvider auth) {
-    return SliverToBoxAdapter(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 0, 20, 40),
-        child: Column(children: [
-          _SectionLabel('ABOUT'),
-          const SizedBox(height: 8),
+      child: Row(
+        children: [
           Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: AppTheme.surfaceContainer,
-              borderRadius: BorderRadius.circular(4),
+            width: 56,
+            height: 56,
+            decoration: const BoxDecoration(
+              gradient: AppTheme.ctaGradient,
+              shape: BoxShape.circle,
             ),
+            child: Center(
+              child: Text(
+                auth.initials,
+                style: GoogleFonts.inter(
+                  color: AppTheme.onPrimary,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 18,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(children: [
-                  ShaderMask(
-                    shaderCallback: (bounds) =>
-                        AppTheme.ctaGradient.createShader(bounds),
-                    blendMode: BlendMode.srcIn,
-                    child: Text(
-                      'VenueVantage',
-                      style: GoogleFonts.inter(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w800,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                  const Spacer(),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: AppTheme.primary.withOpacity(0.15),
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                    child: Text(
-                      'v1.0.0',
-                      style: GoogleFonts.inter(
-                        color: AppTheme.primary,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 0.05 * 10,
-                      ),
-                    ),
-                  ),
-                ]),
-                const SizedBox(height: 8),
                 Text(
-                  'The Digital Executive Box for premium sporting events. Wayfinding, crowd intelligence, and in-seat ordering — all in one.',
+                  auth.displayName,
                   style: GoogleFonts.inter(
-                    color: AppTheme.onSurfaceVariant,
-                    fontSize: 12,
-                    height: 1.6,
+                    color: AppTheme.onSurface,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 17,
+                  ),
+                ),
+                Text(
+                  auth.email ?? (auth.isAnonymous ? 'Guest Account' : 'Member'),
+                  style: GoogleFonts.inter(
+                    color: AppTheme.outline,
+                    fontSize: 13,
                   ),
                 ),
               ],
             ),
           ),
-        ]),
+          _ActionChip(label: 'EDIT', onTap: () {}),
+        ],
       ),
     );
   }
+
+  // ── Preferences Card ──────────────────────────────────────────────────────
+  Widget _buildPrefsCard(AppState state) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceContainer,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        children: [
+          _ToggleTile(
+            icon: Icons.dark_mode_rounded,
+            title: 'Dark Mode',
+            subtitle: 'OLED optimized appearance',
+            value: state.isDarkMode,
+            onChanged: (_) => state.toggleTheme(),
+          ),
+          _divider(),
+          _ToggleTile(
+            icon: Icons.notifications_active_rounded,
+            title: 'Push Notifications',
+            subtitle: 'Crowd and event alerts',
+            value: state.notificationsEnabled,
+            onChanged: (v) => state.toggleNotifications(v),
+          ),
+          _divider(),
+          _ToggleTile(
+            icon: Icons.vibration_rounded,
+            title: 'Haptic Feedback',
+            subtitle: 'Tactile app responses',
+            value: state.hapticsEnabled,
+            onChanged: (v) => state.toggleHaptics(v),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Security Card ─────────────────────────────────────────────────────────
+  Widget _buildSecurityCard() {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceContainer,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        children: [
+          _MenuTile(
+            icon: Icons.fingerprint_rounded,
+            title: 'Biometric Lock',
+            subtitle: 'Require FaceID/Fingerprint',
+            trailing: Switch(
+              value: false,
+              onChanged: (_) {},
+              activeColor: AppTheme.primary,
+            ),
+          ),
+          _divider(),
+          _MenuTile(
+            icon: Icons.lock_outline_rounded,
+            title: 'Privacy Settings',
+            onTap: () {},
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Support Card ──────────────────────────────────────────────────────────
+  Widget _buildSupportCard(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceContainer,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        children: [
+          _MenuTile(
+            icon: Icons.help_outline_rounded,
+            title: 'Help Center',
+            onTap: () {},
+          ),
+          _divider(),
+          _MenuTile(
+            icon: Icons.contact_support_outlined,
+            title: 'Contact Support',
+            onTap: () {},
+          ),
+          _divider(),
+          _MenuTile(
+            icon: Icons.policy_outlined,
+            title: 'Privacy Policy',
+            onTap: () {},
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSignOutButton(BuildContext context, AuthStateProvider auth) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 10),
+      child: TextButton(
+        onPressed: () async {
+          await auth.signOut();
+          if (context.mounted) {
+            Navigator.of(context).popUntil((route) => route.isFirst);
+          }
+        },
+        style: TextButton.styleFrom(
+          foregroundColor: AppTheme.error,
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: BorderSide(color: AppTheme.error.withOpacity(0.2)),
+          ),
+        ),
+        child: Text(
+          auth.isAnonymous ? 'Exit Guest Mode' : 'Sign Out',
+          style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 15),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildVersionInfo() {
+    return Column(
+      children: [
+        Text(
+          'VenueVantage Pro',
+          style: GoogleFonts.inter(
+            color: AppTheme.onSurface,
+            fontWeight: FontWeight.w800,
+            fontSize: 14,
+            letterSpacing: 0.5,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          'Version 1.0.4 • Made for Stadium Enthusiasts',
+          style: GoogleFonts.inter(color: AppTheme.outline, fontSize: 11),
+        ),
+      ],
+    );
+  }
+
+  Widget _divider() => Divider(
+    height: 1,
+    color: AppTheme.outlineVariant.withOpacity(0.05),
+    indent: 56,
+  );
 }
 
 // ── Shared sub-widgets ────────────────────────────────────────────────────────
@@ -205,6 +292,88 @@ class _SectionLabel extends StatelessWidget {
           letterSpacing: 0.05 * 10,
         ),
       ),
+    );
+  }
+}
+
+class _ActionChip extends StatelessWidget {
+  final String label;
+  final VoidCallback onTap;
+  const _ActionChip({required this.label, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: AppTheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Text(
+          label,
+          style: GoogleFonts.inter(
+            color: AppTheme.onSurface,
+            fontWeight: FontWeight.w700,
+            fontSize: 11,
+            letterSpacing: 0.5,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MenuTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String? subtitle;
+  final Widget? trailing;
+  final VoidCallback? onTap;
+
+  const _MenuTile({
+    required this.icon,
+    required this.title,
+    this.subtitle,
+    this.trailing,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      onTap: onTap,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      leading: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: AppTheme.primary.withOpacity(0.08),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Icon(icon, color: AppTheme.primary, size: 20),
+      ),
+      title: Text(
+        title,
+        style: GoogleFonts.inter(
+          color: AppTheme.onSurface,
+          fontWeight: FontWeight.w600,
+          fontSize: 14,
+        ),
+      ),
+      subtitle: subtitle != null
+          ? Text(
+              subtitle!,
+              style: GoogleFonts.inter(color: AppTheme.outline, fontSize: 11),
+            )
+          : null,
+      trailing:
+          trailing ??
+          const Icon(
+            Icons.chevron_right_rounded,
+            color: AppTheme.outlineVariant,
+            size: 20,
+          ),
     );
   }
 }
