@@ -14,8 +14,13 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = context.watch<AppState>().isDarkMode;
-    final isLoading = context.watch<AppState>().isLoading;
+    final state = context.watch<AppState>();
+    final isDark = state.isDarkMode;
+    final isLoading = state.isLoading;
+    
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<AppState>().fetchDynamicData();
+    });
 
     return SafeArea(
       child: RefreshIndicator(
@@ -24,15 +29,17 @@ class HomeScreen extends StatelessWidget {
         onRefresh: () => context.read<AppState>().refreshData(),
         child: isLoading
             ? _buildShimmer()
-            : CustomScrollView(slivers: [
-                _buildHeader(context, isDark),
-                _buildEventBanner(context),
-                _buildLiveStats(context, isDark),
-                _buildCrowdTrendChart(context, isDark),
-                _buildQuickActions(context, isDark),
-                _buildRouteRecommendation(context, isDark),
-                _buildExitCountdown(context),
-              ]),
+            : CustomScrollView(
+                slivers: [
+                  _buildHeader(context, isDark),
+                  _buildEventBanner(context),
+                  _buildLiveStats(context, state),
+                  _buildCrowdTrendChart(context, state),
+                  _buildQuickActions(context, isDark),
+                  _buildRouteRecommendation(context, state),
+                  _buildExitCountdown(context, state),
+                ],
+              ),
       ),
     );
   }
@@ -44,28 +51,34 @@ class HomeScreen extends StatelessWidget {
       highlightColor: AppTheme.surfaceContainerHighest,
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
-        child: Column(children: [
-          const SizedBox(height: 20),
-          _shimmerBox(height: 60, radius: 4),
-          const SizedBox(height: 16),
-          _shimmerBox(height: 160, radius: 4),
-          const SizedBox(height: 16),
-          Row(children: [
-            Expanded(child: _shimmerBox(height: 100, radius: 4)),
-            const SizedBox(width: 12),
-            Expanded(child: _shimmerBox(height: 100, radius: 4)),
-          ]),
-          const SizedBox(height: 12),
-          Row(children: [
-            Expanded(child: _shimmerBox(height: 100, radius: 4)),
-            const SizedBox(width: 12),
-            Expanded(child: _shimmerBox(height: 100, radius: 4)),
-          ]),
-          const SizedBox(height: 16),
-          _shimmerBox(height: 160, radius: 4),
-          const SizedBox(height: 16),
-          _shimmerBox(height: 80, radius: 4),
-        ]),
+        child: Column(
+          children: [
+            const SizedBox(height: 20),
+            _shimmerBox(height: 60, radius: 4),
+            const SizedBox(height: 16),
+            _shimmerBox(height: 160, radius: 4),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(child: _shimmerBox(height: 100, radius: 4)),
+                const SizedBox(width: 12),
+                Expanded(child: _shimmerBox(height: 100, radius: 4)),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(child: _shimmerBox(height: 100, radius: 4)),
+                const SizedBox(width: 12),
+                Expanded(child: _shimmerBox(height: 100, radius: 4)),
+              ],
+            ),
+            const SizedBox(height: 16),
+            _shimmerBox(height: 160, radius: 4),
+            const SizedBox(height: 16),
+            _shimmerBox(height: 80, radius: 4),
+          ],
+        ),
       ),
     );
   }
@@ -84,57 +97,68 @@ class HomeScreen extends StatelessWidget {
   Widget _buildHeader(BuildContext context, bool isDark) {
     return Consumer<AuthStateProvider>(
       builder: (context, auth, _) {
-        final name = auth.isAnonymous ? 'Guest' : (auth.user?.displayName?.split(' ').first ?? 'Member');
+        final name = auth.isAnonymous
+            ? 'Guest'
+            : (auth.user?.displayName?.split(' ').first ?? 'Member');
         return SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-            child: Row(children: [
-              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(
-                  'Welcome back, $name 👋',
-                  style: GoogleFonts.inter(fontSize: 13, color: AppTheme.outline),
+            child: Row(
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Welcome back, $name 👋',
+                      style: GoogleFonts.inter(
+                        fontSize: 13,
+                        color: AppTheme.outline,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    ShaderMask(
+                      shaderCallback: (bounds) =>
+                          AppTheme.ctaGradient.createShader(bounds),
+                      blendMode: BlendMode.srcIn,
+                      child: Text(
+                        'VenueVantage',
+                        style: GoogleFonts.inter(
+                          fontSize: 26,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 2),
-                ShaderMask(
-                  shaderCallback: (bounds) =>
-                      AppTheme.ctaGradient.createShader(bounds),
-                  blendMode: BlendMode.srcIn,
-                  child: Text(
-                    'VenueVantage',
-                    style: GoogleFonts.inter(
-                      fontSize: 26,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.white,
+                const Spacer(),
+                Semantics(
+                  label: 'User profile: ${auth.initials}',
+                  child: Container(
+                    width: 44,
+                    height: 44,
+                    decoration: const BoxDecoration(
+                      gradient: AppTheme.ctaGradient,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Center(
+                      child: auth.photoUrl != null && !auth.isAnonymous
+                          ? ClipOval(
+                              child: Image.network(
+                                auth.photoUrl!,
+                                width: 44,
+                                height: 44,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) =>
+                                    _initials(auth.initials),
+                              ),
+                            )
+                          : _initials(auth.initials),
                     ),
                   ),
                 ),
-              ]),
-              const Spacer(),
-              Semantics(
-                label: 'User profile: ${auth.initials}',
-                child: Container(
-                  width: 44,
-                  height: 44,
-                  decoration: const BoxDecoration(
-                    gradient: AppTheme.ctaGradient,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Center(
-                    child: auth.photoUrl != null && !auth.isAnonymous
-                        ? ClipOval(
-                            child: Image.network(
-                              auth.photoUrl!,
-                              width: 44,
-                              height: 44,
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => _initials(auth.initials),
-                            ),
-                          )
-                        : _initials(auth.initials),
-                  ),
-                ),
-              ),
-            ]),
+              ],
+            ),
           ),
         );
       },
@@ -142,13 +166,13 @@ class HomeScreen extends StatelessWidget {
   }
 
   Widget _initials(String text) => Text(
-        text,
-        style: GoogleFonts.inter(
-          color: AppTheme.onPrimary,
-          fontWeight: FontWeight.w700,
-          fontSize: 14,
-        ),
-      );
+    text,
+    style: GoogleFonts.inter(
+      color: AppTheme.onPrimary,
+      fontWeight: FontWeight.w700,
+      fontSize: 14,
+    ),
+  );
 
   // ── Event Banner ──────────────────────────────────────────────────────────────
   Widget _buildEventBanner(BuildContext context) {
@@ -168,161 +192,193 @@ class HomeScreen extends StatelessWidget {
               ),
             ],
           ),
-          child: Stack(children: [
-            Positioned(
-              right: -20,
-              top: -20,
-              child: Container(
-                width: 120,
-                height: 120,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white.withOpacity(0.06),
+          child: Stack(
+            children: [
+              Positioned(
+                right: -20,
+                top: -20,
+                child: Container(
+                  width: 120,
+                  height: 120,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.white.withOpacity(0.06),
+                  ),
                 ),
               ),
-            ),
-            Positioned(
-              right: 30,
-              bottom: -30,
-              child: Container(
-                width: 100,
-                height: 100,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white.withOpacity(0.04),
+              Positioned(
+                right: 30,
+                bottom: -30,
+                child: Container(
+                  width: 100,
+                  height: 100,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.white.withOpacity(0.04),
+                  ),
                 ),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(children: [
-                    _LiveBadge(),
-                    const SizedBox(width: 10),
-                    Text(
-                      'Q3 · 7:24',
-                      style: GoogleFonts.inter(
-                        color: Colors.white.withOpacity(0.84),
-                        fontWeight: FontWeight.w600,
-                        fontSize: 13,
-                      ),
-                    ),
-                  ]),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'City Hawks vs. Raptors FC',
-                        style: GoogleFonts.inter(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w800,
-                          fontSize: 18,
-                          letterSpacing: -0.02 * 18,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Consumer<AppState>(
-                        builder: (_, state, __) => Text(
-                          '🏟️ Apex Arena · ${state.seatLabel}',
+              Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        _LiveBadge(),
+                        const SizedBox(width: 10),
+                        Text(
+                          'Q3 · 7:24',
                           style: GoogleFonts.inter(
-                            color: Colors.white.withOpacity(0.75),
-                            fontSize: 12,
+                            color: Colors.white.withOpacity(0.84),
+                            fontWeight: FontWeight.w600,
+                            fontSize: 13,
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                ],
+                      ],
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'City Hawks vs. Raptors FC',
+                          style: GoogleFonts.inter(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 18,
+                            letterSpacing: -0.02 * 18,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Consumer<AppState>(
+                          builder: (_, state, __) => Text(
+                            '🏟️ Apex Arena · ${state.seatLabel}',
+                            style: GoogleFonts.inter(
+                              color: Colors.white.withOpacity(0.75),
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
-            ),
-            Positioned(
-              right: 20,
-              top: 0,
-              bottom: 0,
-              child: Center(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Text('87',
+              Positioned(
+                right: 20,
+                top: 0,
+                bottom: 0,
+                child: Center(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Text(
+                        '87',
                         style: GoogleFonts.inter(
                           color: Colors.white,
                           fontSize: 48,
                           fontWeight: FontWeight.w900,
                           height: 1,
                           letterSpacing: -0.02 * 48,
-                        )),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 6),
-                      child: Text('–',
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 6),
+                        child: Text(
+                          '–',
                           style: GoogleFonts.inter(
                             color: Colors.white.withOpacity(0.6),
                             fontSize: 28,
                             fontWeight: FontWeight.w300,
-                          )),
-                    ),
-                    Text('74',
+                          ),
+                        ),
+                      ),
+                      Text(
+                        '74',
                         style: GoogleFonts.inter(
                           color: Colors.white.withOpacity(0.7),
                           fontSize: 48,
                           fontWeight: FontWeight.w900,
                           height: 1,
                           letterSpacing: -0.02 * 48,
-                        )),
-                  ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ]),
+            ],
+          ),
         ),
       ),
     );
   }
 
   // ── Live Stats ────────────────────────────────────────────────────────────────
-  Widget _buildLiveStats(BuildContext context, bool isDark) {
+  Widget _buildLiveStats(BuildContext context, AppState state) {
     return SliverToBoxAdapter(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          _SectionTitle('Live Venue Stats'),
-          const SizedBox(height: 12),
-          // surfaceContainerLow parent — stat cards (surfaceContainer) get
-          // tonal lift without any borders
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: AppTheme.surfaceContainerLow,
-              borderRadius: BorderRadius.circular(4),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _SectionTitle('Live Venue Stats'),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppTheme.surfaceContainerLow,
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: _RadialStatCard(
+                      value: 0.89,
+                      label: 'Capacity',
+                      display: '89%',
+                      color: AppTheme.tertiary,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _RadialStatCard(
+                      value: 0.53,
+                      label: 'Avg Wait',
+                      display: '8 min',
+                      color: AppTheme.primary,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _RadialStatCard(
+                      value: 0.15,
+                      label: 'Best Exit',
+                      display: state.bestExit.split(' ').last,
+                      color: AppTheme.accentGreen,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _RadialStatCard(
+                      value: 0.75,
+                      label: 'Weather',
+                      display: state.temperature,
+                      color: AppTheme.secondary,
+                    ),
+                  ),
+                ],
+              ),
             ),
-            child: Row(children: [
-              Expanded(child: _RadialStatCard(
-                value: 0.89, label: 'Capacity', display: '89%',
-                color: AppTheme.tertiary)),
-              const SizedBox(width: 8),
-              Expanded(child: _RadialStatCard(
-                value: 0.53, label: 'Avg Wait', display: '8 min',
-                color: AppTheme.primary)),
-              const SizedBox(width: 8),
-              Expanded(child: _RadialStatCard(
-                value: 0.15, label: 'Best Exit', display: 'A',
-                color: AppTheme.accentGreen)),
-              const SizedBox(width: 8),
-              Expanded(child: _RadialStatCard(
-                value: 0.75, label: 'Weather', display: '24°',
-                color: AppTheme.secondary)),
-            ]),
-          ),
-        ]),
+          ],
+        ),
       ),
     );
   }
 
   // ── Crowd Trend Chart ─────────────────────────────────────────────────────────
-  Widget _buildCrowdTrendChart(BuildContext context, bool isDark) {
-    final state = context.watch<AppState>();
+  Widget _buildCrowdTrendChart(BuildContext context, AppState state) {
     final spots = state.crowdTrend
         .asMap()
         .entries
@@ -338,102 +394,117 @@ class HomeScreen extends StatelessWidget {
             color: AppTheme.surfaceContainer,
             borderRadius: BorderRadius.circular(4),
           ),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Row(children: [
-              _SectionTitle('Crowd Trend – 30 min'),
-              const Spacer(),
-              // Venue Status Chip — pill shape, low-opacity bg
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-                decoration: BoxDecoration(
-                  color: AppTheme.error.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: Text(
-                  '↑ RISING',
-                  style: GoogleFonts.inter(
-                    color: AppTheme.error,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.05 * 10,
-                  ),
-                ),
-              ),
-            ]),
-            const SizedBox(height: 16),
-            SizedBox(
-              height: 110,
-              child: LineChart(
-                LineChartData(
-                  gridData: FlGridData(
-                    show: true,
-                    drawVerticalLine: false,
-                    getDrawingHorizontalLine: (_) => FlLine(
-                      color: AppTheme.outlineVariant.withOpacity(0.30),
-                      strokeWidth: 0.5,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  _SectionTitle('Crowd Trend – 30 min'),
+                  const Spacer(),
+                  // Venue Status Chip — pill shape, low-opacity bg
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 3,
                     ),
-                  ),
-                  titlesData: FlTitlesData(
-                    leftTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        reservedSize: 32,
-                        getTitlesWidget: (v, _) => Text(
-                          '${v.toInt()}%',
-                          style: GoogleFonts.inter(
-                              color: AppTheme.outline, fontSize: 9),
-                        ),
+                    decoration: BoxDecoration(
+                      color: AppTheme.error.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text(
+                      '↑ RISING',
+                      style: GoogleFonts.inter(
+                        color: AppTheme.error,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.05 * 10,
                       ),
                     ),
-                    bottomTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        reservedSize: 22,
-                        getTitlesWidget: (v, _) {
-                          final labels = state.crowdTrendLabels;
-                          final i = v.toInt();
-                          if (i < 0 || i >= labels.length) {
-                            return const SizedBox.shrink();
-                          }
-                          return Text(labels[i],
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                height: 110,
+                child: LineChart(
+                  LineChartData(
+                    gridData: FlGridData(
+                      show: true,
+                      drawVerticalLine: false,
+                      getDrawingHorizontalLine: (_) => FlLine(
+                        color: AppTheme.outlineVariant.withOpacity(0.30),
+                        strokeWidth: 0.5,
+                      ),
+                    ),
+                    titlesData: FlTitlesData(
+                      leftTitles: AxisTitles(
+                        sideTitles: SideTitles(
+                          showTitles: true,
+                          reservedSize: 32,
+                          getTitlesWidget: (v, _) => Text(
+                            '${v.toInt()}%',
+                            style: GoogleFonts.inter(
+                              color: AppTheme.outline,
+                              fontSize: 9,
+                            ),
+                          ),
+                        ),
+                      ),
+                      bottomTitles: AxisTitles(
+                        sideTitles: SideTitles(
+                          showTitles: true,
+                          reservedSize: 22,
+                          getTitlesWidget: (v, _) {
+                            final labels = state.crowdTrendLabels;
+                            final i = v.toInt();
+                            if (i < 0 || i >= labels.length) {
+                              return const SizedBox.shrink();
+                            }
+                            return Text(
+                              labels[i],
                               style: GoogleFonts.inter(
-                                  color: AppTheme.outline, fontSize: 9));
-                        },
-                      ),
-                    ),
-                    topTitles: const AxisTitles(
-                        sideTitles: SideTitles(showTitles: false)),
-                    rightTitles: const AxisTitles(
-                        sideTitles: SideTitles(showTitles: false)),
-                  ),
-                  borderData: FlBorderData(show: false),
-                  lineBarsData: [
-                    LineChartBarData(
-                      spots: spots,
-                      isCurved: true,
-                      gradient: AppTheme.ctaGradient,
-                      barWidth: 2.5,
-                      dotData: const FlDotData(show: false),
-                      belowBarData: BarAreaData(
-                        show: true,
-                        gradient: LinearGradient(
-                          colors: [
-                            AppTheme.primaryContainer.withOpacity(0.25),
-                            AppTheme.primaryContainer.withOpacity(0.0),
-                          ],
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
+                                color: AppTheme.outline,
+                                fontSize: 9,
+                              ),
+                            );
+                          },
                         ),
                       ),
+                      topTitles: const AxisTitles(
+                        sideTitles: SideTitles(showTitles: false),
+                      ),
+                      rightTitles: const AxisTitles(
+                        sideTitles: SideTitles(showTitles: false),
+                      ),
                     ),
-                  ],
-                  minY: 0,
-                  maxY: 100,
+                    borderData: FlBorderData(show: false),
+                    lineBarsData: [
+                      LineChartBarData(
+                        spots: spots,
+                        isCurved: true,
+                        gradient: AppTheme.ctaGradient,
+                        barWidth: 2.5,
+                        dotData: const FlDotData(show: false),
+                        belowBarData: BarAreaData(
+                          show: true,
+                          gradient: LinearGradient(
+                            colors: [
+                              AppTheme.primaryContainer.withOpacity(0.25),
+                              AppTheme.primaryContainer.withOpacity(0.0),
+                            ],
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                          ),
+                        ),
+                      ),
+                    ],
+                    minY: 0,
+                    maxY: 100,
+                  ),
                 ),
               ),
-            ),
-          ]),
+            ],
+          ),
         ),
       ),
     );
@@ -444,101 +515,122 @@ class HomeScreen extends StatelessWidget {
     return SliverToBoxAdapter(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          _SectionTitle('Quick Actions'),
-          const SizedBox(height: 12),
-          Row(children: [
-            Expanded(child: _QuickAction(
-              icon: Icons.fastfood_rounded,
-              label: 'Order\nFood',
-              gradient: AppTheme.ctaGradient,
-              onTap: () => context.read<AppState>().setSelectedIndex(2),
-            )),
-            const SizedBox(width: 10),
-            Expanded(child: _QuickAction(
-              icon: Icons.wc_rounded,
-              label: 'Find\nRestroom',
-              isGhost: true,
-            )),
-            const SizedBox(width: 10),
-            Expanded(child: _QuickAction(
-              icon: Icons.local_hospital_rounded,
-              label: 'Medical\nAid',
-              gradient: AppTheme.redGradient,
-            )),
-            const SizedBox(width: 10),
-            Expanded(child: _QuickAction(
-              icon: Icons.local_parking_rounded,
-              label: 'My\nParking',
-              isGhost: true,
-            )),
-          ]),
-        ]),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _SectionTitle('Quick Actions'),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: _QuickAction(
+                    icon: Icons.fastfood_rounded,
+                    label: 'Order\nFood',
+                    gradient: AppTheme.ctaGradient,
+                    onTap: () => context.read<AppState>().setSelectedIndex(2),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _QuickAction(
+                    icon: Icons.wc_rounded,
+                    label: 'Find\nRestroom',
+                    isGhost: true,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _QuickAction(
+                    icon: Icons.local_hospital_rounded,
+                    label: 'Medical\nAid',
+                    gradient: AppTheme.redGradient,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _QuickAction(
+                    icon: Icons.local_parking_rounded,
+                    label: 'My\nParking',
+                    isGhost: true,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
 
   // ── Route Recommendation (GlassCard) ─────────────────────────────────────────
-  Widget _buildRouteRecommendation(BuildContext context, bool isDark) {
+  Widget _buildRouteRecommendation(BuildContext context, AppState state) {
     return SliverToBoxAdapter(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          _SectionTitle('Smart Exit Routing'),
-          const SizedBox(height: 12),
-          GlassCard(
-            padding: const EdgeInsets.all(20),
-            blurSigma: 14,
-            tint: AppTheme.accentGreen,
-            child: Row(children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppTheme.accentGreen.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: const Icon(
-                  Icons.directions_walk_rounded,
-                  color: AppTheme.accentGreen,
-                  size: 28,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Recommended: Exit A',
-                      style: GoogleFonts.inter(
-                        color: AppTheme.onSurface,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 15,
-                      ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _SectionTitle('Smart Exit Routing'),
+            const SizedBox(height: 12),
+            GlassCard(
+              padding: const EdgeInsets.all(20),
+              blurSigma: 14,
+              tint: AppTheme.accentGreen,
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppTheme.accentGreen.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(4),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Turn left at Section 12 → follow green signs → Est. 3 min.',
-                      style: GoogleFonts.inter(
-                        color: AppTheme.onSurfaceVariant,
-                        fontSize: 12,
-                        height: 1.5,
-                      ),
+                    child: const Icon(
+                      Icons.directions_walk_rounded,
+                      color: AppTheme.accentGreen,
+                      size: 28,
                     ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Recommended: ${state.bestExit}',
+                          style: GoogleFonts.inter(
+                            color: AppTheme.onSurface,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 15,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Turn left at Section 12 → follow green signs → Est. ${state.eta}.',
+                          style: GoogleFonts.inter(
+                            color: AppTheme.onSurfaceVariant,
+                            fontSize: 12,
+                            height: 1.5,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    color: AppTheme.accentGreen,
+                    size: 16,
+                  ),
+                ],
               ),
-              const Icon(Icons.arrow_forward_ios_rounded,
-                  color: AppTheme.accentGreen, size: 16),
-            ]),
-          ),
-        ]),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   // ── Exit Countdown ────────────────────────────────────────────────────────────
-  Widget _buildExitCountdown(BuildContext context) {
+  Widget _buildExitCountdown(BuildContext context, AppState state) {
     return SliverToBoxAdapter(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
@@ -557,51 +649,56 @@ class HomeScreen extends StatelessWidget {
               width: 1,
             ),
           ),
-          child: Row(children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: AppTheme.tertiary.withOpacity(0.15),
-                borderRadius: BorderRadius.circular(4),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: AppTheme.tertiary.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: const Icon(
+                  Icons.timer_outlined,
+                  color: AppTheme.tertiary,
+                  size: 24,
+                ),
               ),
-              child: const Icon(Icons.timer_outlined,
-                  color: AppTheme.tertiary, size: 24),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Game Ends in ~14 min',
-                    style: GoogleFonts.inter(
-                      color: AppTheme.onSurface,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 14,
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Game Ends in ~14 min',
+                      style: GoogleFonts.inter(
+                        color: AppTheme.onSurface,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    'Head to Exit A now to beat the rush. Exit B has 80% crowd density.',
-                    style: GoogleFonts.inter(
-                      color: AppTheme.tertiary.withOpacity(0.80),
-                      fontSize: 12,
-                      height: 1.5,
+                    const SizedBox(height: 3),
+                    Text(
+                      'Head to ${state.bestExit} now to beat the rush. Other exits are becoming congested.',
+                      style: GoogleFonts.inter(
+                        color: AppTheme.tertiary.withOpacity(0.80),
+                        fontSize: 12,
+                        height: 1.5,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            Text(
-              '14:00',
-              style: GoogleFonts.inter(
-                color: AppTheme.tertiary,
-                fontWeight: FontWeight.w900,
-                fontSize: 20,
-                letterSpacing: -0.02 * 20,
+              Text(
+                '14:00',
+                style: GoogleFonts.inter(
+                  color: AppTheme.tertiary,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 20,
+                  letterSpacing: -0.02 * 20,
+                ),
               ),
-            ),
-          ]),
+            ],
+          ),
         ),
       ),
     );
@@ -624,8 +721,9 @@ class _LiveBadgeState extends State<_LiveBadge>
   void initState() {
     super.initState();
     _c = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 900))
-      ..repeat(reverse: true);
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    )..repeat(reverse: true);
     _pulse = Tween(begin: 0.5, end: 1.0).animate(_c);
   }
 
@@ -644,29 +742,32 @@ class _LiveBadgeState extends State<_LiveBadge>
         borderRadius: BorderRadius.circular(999),
         border: Border.all(color: AppTheme.error.withOpacity(0.30)),
       ),
-      child: Row(mainAxisSize: MainAxisSize.min, children: [
-        FadeTransition(
-          opacity: _pulse,
-          child: Container(
-            width: 6,
-            height: 6,
-            decoration: const BoxDecoration(
-              color: AppTheme.error,
-              shape: BoxShape.circle,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          FadeTransition(
+            opacity: _pulse,
+            child: Container(
+              width: 6,
+              height: 6,
+              decoration: const BoxDecoration(
+                color: AppTheme.error,
+                shape: BoxShape.circle,
+              ),
             ),
           ),
-        ),
-        const SizedBox(width: 5),
-        Text(
-          'LIVE',
-          style: GoogleFonts.inter(
-            color: AppTheme.error,
-            fontSize: 10,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 0.05 * 10,
+          const SizedBox(width: 5),
+          Text(
+            'LIVE',
+            style: GoogleFonts.inter(
+              color: AppTheme.error,
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.05 * 10,
+            ),
           ),
-        ),
-      ]),
+        ],
+      ),
     );
   }
 }
@@ -677,14 +778,14 @@ class _SectionTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Text(
-        text,
-        style: GoogleFonts.inter(
-          color: AppTheme.onSurface,
-          fontSize: 17,
-          fontWeight: FontWeight.w700,
-          letterSpacing: -0.01 * 17,
-        ),
-      );
+    text,
+    style: GoogleFonts.inter(
+      color: AppTheme.onSurface,
+      fontSize: 17,
+      fontWeight: FontWeight.w700,
+      letterSpacing: -0.01 * 17,
+    ),
+  );
 }
 
 /// Primary action button — uses Stitch CTA gradient.
@@ -721,22 +822,28 @@ class _QuickAction extends StatelessWidget {
                 ? Border.all(color: AppTheme.outline.withOpacity(0.20))
                 : null,
           ),
-          child: Column(children: [
-            Icon(icon,
+          child: Column(
+            children: [
+              Icon(
+                icon,
                 color: isGhost ? AppTheme.onSurfaceVariant : AppTheme.onPrimary,
-                size: 22),
-            const SizedBox(height: 6),
-            Text(
-              label,
-              textAlign: TextAlign.center,
-              style: GoogleFonts.inter(
-                color: isGhost ? AppTheme.onSurfaceVariant : AppTheme.onPrimary,
-                fontSize: 10,
-                fontWeight: FontWeight.w600,
-                height: 1.2,
+                size: 22,
               ),
-            ),
-          ]),
+              const SizedBox(height: 6),
+              Text(
+                label,
+                textAlign: TextAlign.center,
+                style: GoogleFonts.inter(
+                  color: isGhost
+                      ? AppTheme.onSurfaceVariant
+                      : AppTheme.onPrimary,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                  height: 1.2,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -764,47 +871,59 @@ class _RadialStatCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(4),
         // No border — parent surfaceContainerLow creates lift
       ),
-      child: Column(children: [
-        SizedBox(
-          height: 60,
-          width: 60,
-          child: Stack(alignment: Alignment.center, children: [
-            PieChart(PieChartData(
-              startDegreeOffset: -90,
-              sections: [
-                PieChartSectionData(
-                    value: value, color: color, radius: 6, title: ''),
-                PieChartSectionData(
-                    value: 1 - value,
-                    color: AppTheme.surfaceContainerHigh,
-                    radius: 6,
-                    title: ''),
+      child: Column(
+        children: [
+          SizedBox(
+            height: 60,
+            width: 60,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                PieChart(
+                  PieChartData(
+                    startDegreeOffset: -90,
+                    sections: [
+                      PieChartSectionData(
+                        value: value,
+                        color: color,
+                        radius: 6,
+                        title: '',
+                      ),
+                      PieChartSectionData(
+                        value: 1 - value,
+                        color: AppTheme.surfaceContainerHigh,
+                        radius: 6,
+                        title: '',
+                      ),
+                    ],
+                    centerSpaceRadius: 22,
+                  ),
+                ),
+                Text(
+                  display,
+                  style: GoogleFonts.inter(
+                    color: AppTheme.onSurface,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 11,
+                  ),
+                ),
               ],
-              centerSpaceRadius: 22,
-            )),
-            Text(
-              display,
-              style: GoogleFonts.inter(
-                color: AppTheme.onSurface,
-                fontWeight: FontWeight.w800,
-                fontSize: 11,
-              ),
             ),
-          ]),
-        ),
-        const SizedBox(height: 6),
-        // label-sm style: UPPERCASE + tracking
-        Text(
-          label.toUpperCase(),
-          style: GoogleFonts.inter(
-            color: AppTheme.onSurfaceVariant,
-            fontSize: 9,
-            fontWeight: FontWeight.w600,
-            letterSpacing: 0.05 * 9,
           ),
-          textAlign: TextAlign.center,
-        ),
-      ]),
+          const SizedBox(height: 6),
+          // label-sm style: UPPERCASE + tracking
+          Text(
+            label.toUpperCase(),
+            style: GoogleFonts.inter(
+              color: AppTheme.onSurfaceVariant,
+              fontSize: 9,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.05 * 9,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
     );
   }
 }

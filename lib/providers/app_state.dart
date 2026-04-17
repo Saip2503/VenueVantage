@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:venue_vantage/services/api_repository.dart';
 import '../data/mock_data.dart';
 import '../services/firestore_service.dart';
 
@@ -124,7 +125,11 @@ class AppState extends ChangeNotifier {
 
   /// Saves seat to both SharedPreferences (offline) and Firestore (cloud sync).
   Future<void> setSeatInfoWithSync(
-      String uid, String section, String row, String seat) async {
+    String uid,
+    String section,
+    String row,
+    String seat,
+  ) async {
     setSeatInfo(section, row, seat);
     await _fs.saveUserProfile(uid, section: section, row: row, seat: seat);
   }
@@ -159,50 +164,68 @@ class AppState extends ChangeNotifier {
     _isLoading = true;
 
     // Menu items
-    _menuSub = _fs.menuStream().listen((items) {
-      _menuItems = items;
-      _isLoading = false;
-      notifyListeners();
-    }, onError: (_) {
-      _menuItems = kMenuItems;
-      _isLoading = false;
-      notifyListeners();
-    });
+    _menuSub = _fs.menuStream().listen(
+      (items) {
+        _menuItems = items;
+        _isLoading = false;
+        notifyListeners();
+      },
+      onError: (_) {
+        _menuItems = kMenuItems;
+        _isLoading = false;
+        notifyListeners();
+      },
+    );
 
     // Alerts
-    _alertsSub = _fs.alertsStream().listen((items) {
-      // Merge: keep local read-state so marking read isn't overwritten
-      final readIds = _alerts.where((a) => a.isRead).map((a) => a.id).toSet();
-      _alerts = items.map((a) {
-        if (readIds.contains(a.id)) return Alert(
-          id: a.id, title: a.title, body: a.body,
-          type: a.type, time: a.time, isRead: true,
-        );
-        return a;
-      }).toList();
-      notifyListeners();
-    }, onError: (_) {
-      _alerts = buildMockAlerts();
-      notifyListeners();
-    });
+    _alertsSub = _fs.alertsStream().listen(
+      (items) {
+        // Merge: keep local read-state so marking read isn't overwritten
+        final readIds = _alerts.where((a) => a.isRead).map((a) => a.id).toSet();
+        _alerts = items.map((a) {
+          if (readIds.contains(a.id)) {
+            return Alert(
+              id: a.id,
+              title: a.title,
+              body: a.body,
+              type: a.type,
+              time: a.time,
+              isRead: true,
+            );
+          }
+          return a;
+        }).toList();
+        notifyListeners();
+      },
+      onError: (_) {
+        _alerts = buildMockAlerts();
+        notifyListeners();
+      },
+    );
 
     // Live stats
-    _statsSub = _fs.statsStream().listen((stats) {
-      _venueStats = stats;
-      notifyListeners();
-    }, onError: (_) {
-      _venueStats = VenueStats.defaults();
-      notifyListeners();
-    });
+    _statsSub = _fs.statsStream().listen(
+      (stats) {
+        _venueStats = stats;
+        notifyListeners();
+      },
+      onError: (_) {
+        _venueStats = VenueStats.defaults();
+        notifyListeners();
+      },
+    );
 
     // POIs
-    _poisSub = _fs.poisStream().listen((pois) {
-      _pois = pois;
-      notifyListeners();
-    }, onError: (_) {
-      _pois = kPointsOfInterest.toList();
-      notifyListeners();
-    });
+    _poisSub = _fs.poisStream().listen(
+      (pois) {
+        _pois = pois;
+        notifyListeners();
+      },
+      onError: (_) {
+        _pois = kPointsOfInterest.toList();
+        notifyListeners();
+      },
+    );
   }
 
   // ── Firestore: seed venue data on first run ────────────────────────────────
@@ -240,12 +263,15 @@ class AppState extends ChangeNotifier {
     if (existing != null) {
       existing.quantity++;
     } else {
-      _cart.add(CartItem(
+      _cart.add(
+        CartItem(
           id: item.id,
           name: item.name,
           price: item.price,
           quantity: 1,
-          emoji: item.emoji));
+          emoji: item.emoji,
+        ),
+      );
     }
     notifyListeners();
   }
@@ -372,11 +398,61 @@ class AppState extends ChangeNotifier {
   bool _isLoading = true;
   bool get isLoading => _isLoading;
 
+  String _bestExit = "Loading...";
+  String _eta = "--";
+  String _temperature = "--";
+  List<dynamic> _places = [];
+
+  String get bestExit => _bestExit;
+  String get eta => _eta;
+  String get temperature => _temperature;
+  List<dynamic> get places => _places;
+
+  final ApiRepository _api = ApiRepository();
+  bool _isFetchingDynamic = false;
+  Future<void> fetchDynamicData() async {
+    if (_isFetchingDynamic) return;
+    _isFetchingDynamic = true;
+
+    try {
+      // Don't set _isLoading = true here to avoid flickering if we already have data
+      // but if it's the first time, it might be beneficial.
+      // For now, let's keep the user's loading logic if they want it.
+
+      final results = await Future.wait([
+        _api.getBestExitETA(),
+        _api.getWeather(),
+        _api.getNearbyPlaces(),
+      ]);
+
+      // Directions/ETA
+      _eta = results[0] as String;
+
+      // Weather
+      _temperature = "${(results[1] as Map<String, dynamic>)['temp']}°";
+
+      // Places
+      _places = results[2] as List<dynamic>;
+
+      // Smart logic: Choose best exit based on ETA or other factors
+      // Simple mock logic: if ETA > 10 mins, suggest different exit
+      _bestExit = _eta.startsWith('1') ? "Exit A" : "Exit B";
+
+      _isLoading = false;
+      notifyListeners();
+    } catch (e) {
+      debugPrint("API Error: $e");
+    } finally {
+      _isFetchingDynamic = false;
+    }
+  }
+
   Future<void> refreshData() async {
     _isLoading = true;
     notifyListeners();
-    // Re-subscribe — Firestore streams auto-refresh, just show the shimmer
-    await Future.delayed(const Duration(milliseconds: 800));
+    await fetchDynamicData();
+    // Re-subscribe — Firestore streams auto-refresh
+    await Future.delayed(const Duration(milliseconds: 500));
     _isLoading = false;
     notifyListeners();
   }
