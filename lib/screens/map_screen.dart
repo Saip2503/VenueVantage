@@ -17,6 +17,23 @@ class MapScreen extends StatefulWidget {
 class _MapScreenState extends State<MapScreen> {
   POIType? _filterType;
   GoogleMapController? _mapController;
+  BitmapDescriptor? _stadiumOverlay;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadOverlay();
+  }
+
+  Future<void> _loadOverlay() async {
+    final descriptor = await BitmapDescriptor.fromAssetImage(
+      const ImageConfiguration(size: Size(1024, 1024)),
+      currentVenue.imagePath,
+    );
+    setState(() {
+      _stadiumOverlay = descriptor;
+    });
+  }
   
   static const Map<POIType, _POIStyle> _styles = {
     POIType.food: _POIStyle(
@@ -205,6 +222,18 @@ class _MapScreenState extends State<MapScreen> {
                 mapType: MapType.normal,
                 style: _darkMapStyle,
                 markers: _buildMarkers(pois, state),
+                groundOverlays: _stadiumOverlay == null
+                    ? {}
+                    : {
+                        GroundOverlay(
+                          groundOverlayId: const GroundOverlayId("stadium_bg"),
+                          bitmapDescriptor: _stadiumOverlay!,
+                          bounds: LatLngBounds(
+                            southwest: LatLng(currentVenue.seLat, currentVenue.nwLng),
+                            northeast: LatLng(currentVenue.nwLat, currentVenue.seLng),
+                          ),
+                        ),
+                      },
               ),
             ),
           ),

@@ -5,6 +5,11 @@ final Venue currentVenue = Venue(
   lat: 19.0423934,
   lng: 73.0265071,
   placeId: "ChIJWyUeO8XD5zsRM4IRQjq3qD8",
+  imagePath: "assets/images/stadium.png",
+  nwLat: 19.0438,
+  nwLng: 73.0248,
+  seLat: 19.0410,
+  seLng: 73.0282,
 
   // 🔥 YOU DEFINE EXITS (Google doesn’t give this)
   exits: [
