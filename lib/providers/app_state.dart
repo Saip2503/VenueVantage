@@ -54,6 +54,7 @@ class PointOfInterest {
   final String id, name, waitTime;
   final POIType type;
   final double x, y;
+  final double lat, lng;
   final int crowdLevel;
   const PointOfInterest({
     required this.id,
@@ -61,6 +62,8 @@ class PointOfInterest {
     required this.type,
     required this.x,
     required this.y,
+    required this.lat,
+    required this.lng,
     required this.crowdLevel,
     required this.waitTime,
   });
@@ -420,23 +423,21 @@ class AppState extends ChangeNotifier {
       // For now, let's keep the user's loading logic if they want it.
 
       final results = await Future.wait([
-        _api.getBestExitETA(),
+        _api.getBestExitData(),
         _api.getWeather(),
         _api.getNearbyPlaces(),
       ]);
 
-      // Directions/ETA
-      _eta = results[0] as String;
+      // Smart Exit selection
+      final bestExitResult = results[0] as Map<String, dynamic>;
+      _bestExit = bestExitResult['exit'];
+      _eta = bestExitResult['durationText'];
 
       // Weather
       _temperature = "${(results[1] as Map<String, dynamic>)['temp']}°";
 
       // Places
       _places = results[2] as List<dynamic>;
-
-      // Smart logic: Choose best exit based on ETA or other factors
-      // Simple mock logic: if ETA > 10 mins, suggest different exit
-      _bestExit = _eta.startsWith('1') ? "Exit A" : "Exit B";
 
       _isLoading = false;
       notifyListeners();

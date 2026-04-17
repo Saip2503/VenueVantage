@@ -7,9 +7,8 @@ class ApiRepository {
   final PlacesService _places = PlacesService();
   final WeatherService _weather = WeatherService();
 
-  Future<String> getBestExitETA() async {
-    final res = await _maps.getDirections("stadium", "exit");
-    return res['duration']; // adjust based on your API
+  Future<Map<String, dynamic>> getBestExitData() async {
+    return await _maps.getBestExit();
   }
 
   Future<List<dynamic>> getNearbyPlaces() async {

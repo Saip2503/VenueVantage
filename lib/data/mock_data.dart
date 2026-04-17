@@ -36,27 +36,27 @@ List<Alert> kLiveAlertPool = [
 // ── Points of Interest ────────────────────────────────────────────────────────
 const List<PointOfInterest> kPointsOfInterest = [
   // Major Entries
-  PointOfInterest(id: 'p1', name: 'Main Gate (West)', type: POIType.exit, x: 0.1, y: 0.5, crowdLevel: 25, waitTime: '4 min'),
-  PointOfInterest(id: 'p2', name: 'North Gate', type: POIType.exit, x: 0.5, y: 0.1, crowdLevel: 15, waitTime: '2 min'),
-  PointOfInterest(id: 'p3', name: 'East Gate', type: POIType.exit, x: 0.9, y: 0.5, crowdLevel: 45, waitTime: '8 min'),
-  PointOfInterest(id: 'p4', name: 'South Gate', type: POIType.exit, x: 0.5, y: 0.9, crowdLevel: 20, waitTime: '3 min'),
+  PointOfInterest(id: 'p1', name: 'Main Gate (West)', type: POIType.exit, x: 0.1, y: 0.5, lat: 19.0424, lng: 73.0250, crowdLevel: 25, waitTime: '4 min'),
+  PointOfInterest(id: 'p2', name: 'North Gate', type: POIType.exit, x: 0.5, y: 0.1, lat: 19.0435, lng: 73.0265, crowdLevel: 15, waitTime: '2 min'),
+  PointOfInterest(id: 'p3', name: 'East Gate', type: POIType.exit, x: 0.9, y: 0.5, lat: 19.0424, lng: 73.0280, crowdLevel: 45, waitTime: '8 min'),
+  PointOfInterest(id: 'p4', name: 'South Gate', type: POIType.exit, x: 0.5, y: 0.9, lat: 19.0410, lng: 73.0265, crowdLevel: 20, waitTime: '3 min'),
   
   // Food & Drinks (Distributed quadrants)
-  PointOfInterest(id: 'p5', name: 'Victory Grill (NW)', type: POIType.food, x: 0.25, y: 0.25, crowdLevel: 85, waitTime: '15 min'),
-  PointOfInterest(id: 'p6', name: 'Concourse Bites (SE)', type: POIType.food, x: 0.75, y: 0.75, crowdLevel: 40, waitTime: '6 min'),
-  PointOfInterest(id: 'p7', name: 'The Brewhouse (NE)', type: POIType.food, x: 0.75, y: 0.25, crowdLevel: 60, waitTime: '10 min'),
-  PointOfInterest(id: 'p8', name: 'Halftime Snacks (SW)', type: POIType.food, x: 0.25, y: 0.75, crowdLevel: 30, waitTime: '4 min'),
+  PointOfInterest(id: 'p5', name: 'Victory Grill (NW)', type: POIType.food, x: 0.25, y: 0.25, lat: 19.0430, lng: 73.0255, crowdLevel: 85, waitTime: '15 min'),
+  PointOfInterest(id: 'p6', name: 'Concourse Bites (SE)', type: POIType.food, x: 0.75, y: 0.75, lat: 19.0415, lng: 73.0275, crowdLevel: 40, waitTime: '6 min'),
+  PointOfInterest(id: 'p7', name: 'The Brewhouse (NE)', type: POIType.food, x: 0.75, y: 0.25, lat: 19.0430, lng: 73.0275, crowdLevel: 60, waitTime: '10 min'),
+  PointOfInterest(id: 'p8', name: 'Halftime Snacks (SW)', type: POIType.food, x: 0.25, y: 0.75, lat: 19.0415, lng: 73.0255, crowdLevel: 30, waitTime: '4 min'),
   
   // Restrooms
-  PointOfInterest(id: 'p9', name: 'Restrooms (Level 1 West)', type: POIType.restroom, x: 0.15, y: 0.4, crowdLevel: 90, waitTime: '14 min'),
-  PointOfInterest(id: 'p10', name: 'Restrooms (Level 1 East)', type: POIType.restroom, x: 0.85, y: 0.4, crowdLevel: 20, waitTime: '2 min'),
-  PointOfInterest(id: 'p11', name: 'Restrooms (Level 2 North)', type: POIType.restroom, x: 0.4, y: 0.15, crowdLevel: 50, waitTime: '7 min'),
-  PointOfInterest(id: 'p12', name: 'Restrooms (Level 2 South)', type: POIType.restroom, x: 0.6, y: 0.85, crowdLevel: 10, waitTime: '1 min'),
+  PointOfInterest(id: 'p9', name: 'Restrooms (Level 1 West)', type: POIType.restroom, x: 0.15, y: 0.4, lat: 19.0426, lng: 73.0252, crowdLevel: 90, waitTime: '14 min'),
+  PointOfInterest(id: 'p10', name: 'Restrooms (Level 1 East)', type: POIType.restroom, x: 0.85, y: 0.4, lat: 19.0426, lng: 73.0278, crowdLevel: 20, waitTime: '2 min'),
+  PointOfInterest(id: 'p11', name: 'Restrooms (Level 2 North)', type: POIType.restroom, x: 0.4, y: 0.15, lat: 19.0432, lng: 73.0262, crowdLevel: 50, waitTime: '7 min'),
+  PointOfInterest(id: 'p12', name: 'Restrooms (Level 2 South)', type: POIType.restroom, x: 0.6, y: 0.85, lat: 19.0413, lng: 73.0268, crowdLevel: 10, waitTime: '1 min'),
   
   // Services
-  PointOfInterest(id: 'p13', name: 'Official Merch Hub', type: POIType.merch, x: 0.5, y: 0.5, crowdLevel: 70, waitTime: '18 min'),
-  PointOfInterest(id: 'p14', name: 'First Aid Station', type: POIType.medical, x: 0.45, y: 0.45, crowdLevel: 5, waitTime: 'None'),
-  PointOfInterest(id: 'p15', name: 'Emergency Exit (N)', type: POIType.exit, x: 0.5, y: 0.05, crowdLevel: 0, waitTime: 'Clear'),
+  PointOfInterest(id: 'p13', name: 'Official Merch Hub', type: POIType.merch, x: 0.5, y: 0.5, lat: 19.0424, lng: 73.0265, crowdLevel: 70, waitTime: '18 min'),
+  PointOfInterest(id: 'p14', name: 'First Aid Station', type: POIType.medical, x: 0.45, y: 0.45, lat: 19.0422, lng: 73.0263, crowdLevel: 5, waitTime: 'None'),
+  PointOfInterest(id: 'p15', name: 'Emergency Exit (N)', type: POIType.exit, x: 0.5, y: 0.05, lat: 19.0438, lng: 73.0265, crowdLevel: 0, waitTime: 'Clear'),
 ];
 
 // ── Crowd Trend Data (last 30 minutes, 6 data points) ────────────────────────

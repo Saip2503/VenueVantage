@@ -114,6 +114,8 @@ class FirestoreService {
       ),
       x: (data['x'] as num?)?.toDouble() ?? 0.5,
       y: (data['y'] as num?)?.toDouble() ?? 0.5,
+      lat: (data['lat'] as num?)?.toDouble() ?? 19.0424,
+      lng: (data['lng'] as num?)?.toDouble() ?? 73.0265,
       crowdLevel: (data['crowdLevel'] as num?)?.toInt() ?? 50,
       waitTime: data['waitTime'] as String? ?? '—',
     );
@@ -231,6 +233,8 @@ class FirestoreService {
         'type': poi.type.name,
         'x': poi.x,
         'y': poi.y,
+        'lat': poi.lat,
+        'lng': poi.lng,
         'crowdLevel': poi.crowdLevel,
         'waitTime': poi.waitTime,
       });
