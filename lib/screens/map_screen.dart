@@ -1,4 +1,3 @@
-import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 
 import 'package:google_fonts/google_fonts.dart';
@@ -6,6 +5,8 @@ import 'package:provider/provider.dart';
 
 import '../providers/app_state.dart';
 import '../theme/app_theme.dart';
+
+import '../data/mock_data.dart';
 
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
@@ -57,14 +58,7 @@ class _MapScreenState extends State<MapScreen> {
         children: [
           _buildHeader(),
           _buildFilterBar(),
-          Expanded(
-            child: Stack(
-              children: [
-                _buildMapArea(context),
-                _buildPOIDetailsSheet(context),
-              ],
-            ),
-          ),
+          Expanded(child: Stack(children: [_buildMapArea(context)])),
         ],
       ),
     );
@@ -207,40 +201,45 @@ class _MapScreenState extends State<MapScreen> {
                       return InteractiveViewer(
                         maxScale: 3.0,
                         minScale: 1.0,
-                        boundaryMargin: const EdgeInsets.all(50),
-                        child: Stack(
-                          children: [
-                            // 1. Blueprint Background
-                            _buildStadiumBackground(constraints),
+                        boundaryMargin: const EdgeInsets.symmetric(
+                          vertical: 50,
+                          horizontal: 100,
+                        ),
+                        child: AspectRatio(
+                          aspectRatio:
+                              2.0, // Matching the schematic's aspect ratio
+                          child: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              // 1. Blueprint Background
+                              _buildStadiumBackground(constraints),
 
-                            // 2. Crowd Heatmap
-                            //_buildHeatmapOverlay(constraints),
-
-                            // 3. Dynamic POI Markers
-                            ...pois.map(
-                              (poi) => Positioned(
-                                left: poi.x * constraints.maxWidth - 18,
-                                top: poi.y * constraints.maxHeight - 18,
-                                child: _POIMarker(
-                                  poi: poi,
-                                  style: _styles[poi.type]!,
-                                  isSelected: state.selectedPOI?.id == poi.id,
-                                  onTap: () => state.selectPOI(
-                                    state.selectedPOI?.id == poi.id
-                                        ? null
-                                        : poi,
+                              // 2. Dynamic POI Markers
+                              ...pois.map(
+                                (poi) => Positioned(
+                                  left: poi.x * constraints.maxWidth - 18,
+                                  top: poi.y * constraints.maxHeight - 18,
+                                  child: _POIMarker(
+                                    poi: poi,
+                                    style: _styles[poi.type]!,
+                                    isSelected: state.selectedPOI?.id == poi.id,
+                                    onTap: () => state.selectPOI(
+                                      state.selectedPOI?.id == poi.id
+                                          ? null
+                                          : poi,
+                                    ),
                                   ),
                                 ),
                               ),
-                            ),
 
-                            // 4. "You Are Here" Marker (Static for demo)
-                            Positioned(
-                              left: constraints.maxWidth * 0.48,
-                              top: constraints.maxHeight * 0.85,
-                              child: _YouAreHereMarker(),
-                            ),
-                          ],
+                              // 4. "You Are Here" Marker (Static for demo)
+                              Positioned(
+                                left: constraints.maxWidth * 0.48,
+                                top: constraints.maxHeight * 0.85,
+                                child: _YouAreHereMarker(),
+                              ),
+                            ],
+                          ),
                         ),
                       );
                     },
@@ -261,8 +260,8 @@ class _MapScreenState extends State<MapScreen> {
     return Container(
       color: const Color(0xFF0a0e1a),
       child: Image.asset(
-        'images/stadium_map.png',
-        fit: BoxFit.contain,
+        'images/stadium.png',
+        fit: BoxFit.fill,
         filterQuality: FilterQuality.high,
         isAntiAlias: true,
       ),
@@ -293,178 +292,175 @@ class _MapScreenState extends State<MapScreen> {
               curve: Curves.easeOutCubic,
               padding: const EdgeInsets.all(18),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.05),
+                color: AppTheme.bgCard, // ✅ solid background (NO BLUR)
                 borderRadius: BorderRadius.circular(24),
                 border: Border.all(
                   color: const Color(0xFF424754).withOpacity(0.15),
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.2),
+                    color: Colors.black.withOpacity(0.25),
                     blurRadius: 30,
+                    offset: const Offset(0, 10),
                   ),
                 ],
               ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(24),
-                child: BackdropFilter(
-                  filter: _getBlurFilter(),
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
+              child: Padding(
+                padding: const EdgeInsets.all(6),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'ACTIVE NAVIGATION',
+                      style: GoogleFonts.inter(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w900,
+                        color: AppTheme.primary,
+                        letterSpacing: 2,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+
+                    Row(
                       children: [
-                        Text(
-                          'ACTIVE NAVIGATION',
-                          style: GoogleFonts.inter(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w900,
-                            color: AppTheme.primary,
-                            letterSpacing: 2,
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: style.color.withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(style.icon, color: style.color, size: 22),
+                        ),
+                        const SizedBox(width: 14),
+
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                poi.name,
+                                style: GoogleFonts.inter(
+                                  color: AppTheme.textPrimary,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 15,
+                                ),
+                              ),
+                              Text(
+                                style.label,
+                                style: GoogleFonts.inter(
+                                  color: style.color,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                        const SizedBox(height: 4),
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(10),
-                              decoration: BoxDecoration(
-                                color: style.color.withOpacity(0.15),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Icon(
-                                style.icon,
-                                color: style.color,
-                                size: 22,
-                              ),
+
+                        GestureDetector(
+                          onTap: () => state.selectPOI(null),
+                          child: Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: AppTheme.bgSurface,
+                              borderRadius: BorderRadius.circular(8),
                             ),
-                            const SizedBox(width: 14),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    poi.name,
-                                    style: GoogleFonts.inter(
-                                      color: AppTheme.textPrimary,
-                                      fontWeight: FontWeight.w700,
-                                      fontSize: 15,
-                                    ),
-                                  ),
-                                  Text(
-                                    style.label,
-                                    style: GoogleFonts.inter(
-                                      color: style.color,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ],
-                              ),
+                            child: const Icon(
+                              Icons.close_rounded,
+                              color: AppTheme.textMuted,
+                              size: 16,
                             ),
-                            GestureDetector(
-                              onTap: () => state.selectPOI(null),
-                              child: Container(
-                                padding: const EdgeInsets.all(6),
-                                decoration: BoxDecoration(
-                                  color: AppTheme.bgSurface,
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: const Icon(
-                                  Icons.close_rounded,
-                                  color: AppTheme.textMuted,
-                                  size: 16,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 14),
-                        Row(
-                          children: [
-                            _POIStatChip(
-                              label: 'Wait Time',
-                              value: poi.waitTime,
-                              icon: Icons.timer_rounded,
-                              color: AppTheme.accentBlue,
-                            ),
-                            const SizedBox(width: 10),
-                            _POIStatChip(
-                              label: 'Crowd Level',
-                              value: '${poi.crowdLevel}%',
-                              icon: Icons.people_rounded,
-                              color: crowdColor,
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: ElevatedButton.icon(
-                                onPressed: () {},
-                                icon: const Icon(
-                                  Icons.navigation_rounded,
-                                  size: 14,
-                                ),
-                                label: Text(
-                                  'Navigate',
-                                  style: GoogleFonts.inter(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: style.color,
-                                  foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 10,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 10),
-                        // Crowd bar
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  'Crowd Density',
-                                  style: GoogleFonts.inter(
-                                    color: AppTheme.textMuted,
-                                    fontSize: 11,
-                                  ),
-                                ),
-                                Text(
-                                  '${poi.crowdLevel}%',
-                                  style: GoogleFonts.inter(
-                                    color: crowdColor,
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 5),
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(4),
-                              child: LinearProgressIndicator(
-                                value: poi.crowdLevel / 100,
-                                minHeight: 6,
-                                backgroundColor: AppTheme.bgSurface,
-                                valueColor: AlwaysStoppedAnimation(crowdColor),
-                              ),
-                            ),
-                          ],
+                          ),
                         ),
                       ],
                     ),
-                  ),
+
+                    const SizedBox(height: 14),
+
+                    Row(
+                      children: [
+                        _POIStatChip(
+                          label: 'Wait Time',
+                          value: poi.waitTime,
+                          icon: Icons.timer_rounded,
+                          color: AppTheme.accentBlue,
+                        ),
+                        const SizedBox(width: 10),
+                        _POIStatChip(
+                          label: 'Crowd Level',
+                          value: '${poi.crowdLevel}%',
+                          icon: Icons.people_rounded,
+                          color: crowdColor,
+                        ),
+                        const SizedBox(width: 10),
+
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: () {},
+                            icon: const Icon(
+                              Icons.navigation_rounded,
+                              size: 14,
+                            ),
+                            label: Text(
+                              'Navigate',
+                              style: GoogleFonts.inter(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: style.color,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 10),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 10),
+
+                    // Crowd bar
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Crowd Density',
+                              style: GoogleFonts.inter(
+                                color: AppTheme.textMuted,
+                                fontSize: 11,
+                              ),
+                            ),
+                            Text(
+                              '${poi.crowdLevel}%',
+                              style: GoogleFonts.inter(
+                                color: crowdColor,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 5),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(4),
+                          child: LinearProgressIndicator(
+                            value: poi.crowdLevel / 100,
+                            minHeight: 6,
+                            backgroundColor: AppTheme.bgSurface,
+                            valueColor: AlwaysStoppedAnimation(crowdColor),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -545,7 +541,6 @@ class _POIMarker extends StatefulWidget {
 class _POIMarkerState extends State<_POIMarker>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
-  late Animation<double> _scaleAnim;
 
   @override
   void initState() {
@@ -554,10 +549,6 @@ class _POIMarkerState extends State<_POIMarker>
       vsync: this,
       duration: const Duration(milliseconds: 600),
     )..repeat(reverse: true);
-    _scaleAnim = Tween(
-      begin: 0.9,
-      end: 1.0,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
   }
 
   @override
@@ -591,20 +582,15 @@ class _POIMarkerState extends State<_POIMarker>
           ],
           border: Border.all(color: getGlowColor().withOpacity(0.3), width: 2),
         ),
-        child: BackdropFilter(
-          filter: _getBlurFilter(),
-          child: Icon(
-            widget.style.icon,
-            color: getGlowColor(),
-            size: widget.isSelected ? 24 : 20,
-          ),
+        child: Icon(
+          widget.style.icon,
+          color: getGlowColor(),
+          size: widget.isSelected ? 24 : 20,
         ),
       ),
     );
   }
 }
-
-ui.ImageFilter _getBlurFilter() => ui.ImageFilter.blur(sigmaX: 16, sigmaY: 16);
 
 class _YouAreHereMarker extends StatefulWidget {
   @override

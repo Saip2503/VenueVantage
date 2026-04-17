@@ -35,13 +35,28 @@ List<Alert> kLiveAlertPool = [
 
 // ── Points of Interest ────────────────────────────────────────────────────────
 const List<PointOfInterest> kPointsOfInterest = [
-  PointOfInterest(id: 'p1', name: 'Entrance A', type: POIType.exit, x: 0.12, y: 0.5, crowdLevel: 15, waitTime: '2 min'),
-  PointOfInterest(id: 'p2', name: 'Entrance B', type: POIType.exit, x: 0.15, y: 0.28, crowdLevel: 45, waitTime: '6 min'),
-  PointOfInterest(id: 'p3', name: 'Entrance C', type: POIType.exit, x: 0.15, y: 0.72, crowdLevel: 25, waitTime: '3 min'),
-  PointOfInterest(id: 'p4', name: 'Food Court (West)', type: POIType.food, x: 0.25, y: 0.5, crowdLevel: 65, waitTime: '12 min'),
-  PointOfInterest(id: 'p5', name: 'Food Court (South)', type: POIType.food, x: 0.52, y: 0.68, crowdLevel: 40, waitTime: '5 min'),
-  PointOfInterest(id: 'p6', name: 'Restrooms (North)', type: POIType.restroom, x: 0.5, y: 0.24, crowdLevel: 30, waitTime: '2 min'),
-  PointOfInterest(id: 'p7', name: 'Restrooms (East)', type: POIType.restroom, x: 0.76, y: 0.5, crowdLevel: 75, waitTime: '9 min'),
+  // Major Entries
+  PointOfInterest(id: 'p1', name: 'Main Gate (West)', type: POIType.exit, x: 0.1, y: 0.5, crowdLevel: 25, waitTime: '4 min'),
+  PointOfInterest(id: 'p2', name: 'North Gate', type: POIType.exit, x: 0.5, y: 0.1, crowdLevel: 15, waitTime: '2 min'),
+  PointOfInterest(id: 'p3', name: 'East Gate', type: POIType.exit, x: 0.9, y: 0.5, crowdLevel: 45, waitTime: '8 min'),
+  PointOfInterest(id: 'p4', name: 'South Gate', type: POIType.exit, x: 0.5, y: 0.9, crowdLevel: 20, waitTime: '3 min'),
+  
+  // Food & Drinks (Distributed quadrants)
+  PointOfInterest(id: 'p5', name: 'Victory Grill (NW)', type: POIType.food, x: 0.25, y: 0.25, crowdLevel: 85, waitTime: '15 min'),
+  PointOfInterest(id: 'p6', name: 'Concourse Bites (SE)', type: POIType.food, x: 0.75, y: 0.75, crowdLevel: 40, waitTime: '6 min'),
+  PointOfInterest(id: 'p7', name: 'The Brewhouse (NE)', type: POIType.food, x: 0.75, y: 0.25, crowdLevel: 60, waitTime: '10 min'),
+  PointOfInterest(id: 'p8', name: 'Halftime Snacks (SW)', type: POIType.food, x: 0.25, y: 0.75, crowdLevel: 30, waitTime: '4 min'),
+  
+  // Restrooms
+  PointOfInterest(id: 'p9', name: 'Restrooms (Level 1 West)', type: POIType.restroom, x: 0.15, y: 0.4, crowdLevel: 90, waitTime: '14 min'),
+  PointOfInterest(id: 'p10', name: 'Restrooms (Level 1 East)', type: POIType.restroom, x: 0.85, y: 0.4, crowdLevel: 20, waitTime: '2 min'),
+  PointOfInterest(id: 'p11', name: 'Restrooms (Level 2 North)', type: POIType.restroom, x: 0.4, y: 0.15, crowdLevel: 50, waitTime: '7 min'),
+  PointOfInterest(id: 'p12', name: 'Restrooms (Level 2 South)', type: POIType.restroom, x: 0.6, y: 0.85, crowdLevel: 10, waitTime: '1 min'),
+  
+  // Services
+  PointOfInterest(id: 'p13', name: 'Official Merch Hub', type: POIType.merch, x: 0.5, y: 0.5, crowdLevel: 70, waitTime: '18 min'),
+  PointOfInterest(id: 'p14', name: 'First Aid Station', type: POIType.medical, x: 0.45, y: 0.45, crowdLevel: 5, waitTime: 'None'),
+  PointOfInterest(id: 'p15', name: 'Emergency Exit (N)', type: POIType.exit, x: 0.5, y: 0.05, crowdLevel: 0, waitTime: 'Clear'),
 ];
 
 // ── Crowd Trend Data (last 30 minutes, 6 data points) ────────────────────────
@@ -50,10 +65,12 @@ const List<String> kCrowdTrendLabels = ['-30m', '-24m', '-18m', '-12m', '-6m', '
 
 // ── Section crowd breakdown ───────────────────────────────────────────────────
 const List<Map<String, dynamic>> kSectionData = [
-  {'section': '104', 'crowd': 92.0, 'color': 0xFFEF4444}, // Red Glow (Bottom-Left)
-  {'section': '202T', 'crowd': 65.0, 'color': 0xFFF59E0B}, // Amber Glow (Top-Right)
-  {'section': '203R', 'crowd': 58.0, 'color': 0xFFF59E0B}, // Amber Glow (Right)
-  {'section': '106B', 'crowd': 22.0, 'color': 0xFF10B981}, // Green Glow (Bottom)
-  {'section': '202B', 'crowd': 18.0, 'color': 0xFF10B981}, // Green Glow (Bottom-Right)
-  {'section': '101L', 'crowd': 40.0, 'color': 0xFF3B82F6}, // Standard (Blue)
+  {'section': '104', 'crowd': 92.0}, // Red Center
+  {'section': '106B', 'crowd': 12.0}, // Green South
+  {'section': '108R', 'crowd': 45.0}, // Amber East
+  {'section': '102L', 'crowd': 38.0}, // Amber West
+  {'section': '201T', 'crowd': 70.0}, // Red North Upper
+  {'section': '205B', 'crowd': 22.0}, // Green South Upper
+  {'section': '203R', 'crowd': 55.0}, // Amber East Upper
+  {'section': 'VIP', 'crowd': 15.0}, // Green Center
 ];
