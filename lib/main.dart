@@ -12,7 +12,6 @@ import 'screens/home_screen.dart';
 import 'screens/map_screen.dart';
 import 'screens/order_screen.dart';
 import 'screens/alerts_screen.dart';
-import 'screens/settings_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/assistant_screen.dart';
 import 'theme/app_theme.dart';
@@ -26,9 +25,7 @@ void main() async {
   } catch (e) {
     debugPrint("Failed to load .env file: $e");
   }
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(
     MultiProvider(
       providers: [
@@ -39,7 +36,6 @@ void main() async {
     ),
   );
 }
-
 
 class VenueVantageApp extends StatelessWidget {
   const VenueVantageApp({super.key});
@@ -111,9 +107,13 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
   void initState() {
     super.initState();
     _fadeController = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 220));
-    _fadeAnimation =
-        CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut);
+      vsync: this,
+      duration: const Duration(milliseconds: 220),
+    );
+    _fadeAnimation = CurvedAnimation(
+      parent: _fadeController,
+      curve: Curves.easeInOut,
+    );
     _fadeController.forward();
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
@@ -151,23 +151,26 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
           return Scaffold(
             backgroundColor: AppTheme.bg(isDark),
             floatingActionButton: _buildAssistantFab(context),
-            body: Row(children: [
-              _buildSidebar(isDark),
-              Expanded(
-                child: FadeTransition(
-                  opacity: _fadeAnimation,
-                  child: _screens[selectedIndex],
+            body: Row(
+              children: [
+                _buildSidebar(isDark),
+                Expanded(
+                  child: FadeTransition(
+                    opacity: _fadeAnimation,
+                    child: _screens[selectedIndex],
+                  ),
                 ),
-              ),
-            ]),
+              ],
+            ),
           );
         }
         return Scaffold(
           backgroundColor: AppTheme.bg(isDark),
           floatingActionButton: _buildAssistantFab(context),
           body: FadeTransition(
-              opacity: _fadeAnimation,
-              child: _screens[selectedIndex]),
+            opacity: _fadeAnimation,
+            child: _screens[selectedIndex],
+          ),
           bottomNavigationBar: _buildNavBar(isDark),
         );
       },
@@ -177,13 +180,19 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
   Widget _buildAssistantFab(BuildContext context) {
     return FloatingActionButton.extended(
       onPressed: () {
-        Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const AssistantScreen()),
-        );
+        Navigator.of(
+          context,
+        ).push(MaterialPageRoute(builder: (_) => const AssistantScreen()));
       },
       backgroundColor: AppTheme.primary,
       icon: const Icon(Icons.auto_awesome_rounded, color: Colors.white),
-      label: Text('Venue AI', style: GoogleFonts.inter(fontWeight: FontWeight.w700, color: Colors.white)),
+      label: Text(
+        'Venue AI',
+        style: GoogleFonts.inter(
+          fontWeight: FontWeight.w700,
+          color: Colors.white,
+        ),
+      ),
     );
   }
 
@@ -193,78 +202,87 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
       width: 200,
       color: AppTheme.surfaceContainerLow,
       child: SafeArea(
-        child: Column(children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: ShaderMask(
-                shaderCallback: (bounds) =>
-                    AppTheme.ctaGradient.createShader(bounds),
-                blendMode: BlendMode.srcIn,
-                child: Text(
-                  'VenueVantage',
-                  style: GoogleFonts.inter(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w800,
-                    color: Colors.white,
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: ShaderMask(
+                  shaderCallback: (bounds) =>
+                      AppTheme.ctaGradient.createShader(bounds),
+                  blendMode: BlendMode.srcIn,
+                  child: Text(
+                    'VenueVantage',
+                    style: GoogleFonts.inter(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-          Container(
+            Container(
               height: 1,
-              color: AppTheme.outlineVariant.withOpacity(0.12)),
-          const SizedBox(height: 8),
-          ...List.generate(_navItems.length, (i) {
-            final isSelected = context.watch<AppState>().selectedIndex == i;
-            return Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-              child: GestureDetector(
-                onTap: () => _onNavTap(i),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 220),
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: isSelected
-                        ? AppTheme.primary.withOpacity(0.12)
-                        : Colors.transparent,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Row(children: [
-                    AnimatedScale(
-                      scale: isSelected ? 1.1 : 1.0,
-                      duration: const Duration(milliseconds: 220),
-                      child: Icon(
-                        _navItems[i].icon,
-                        size: 20,
-                        color: isSelected
-                            ? AppTheme.primary
-                            : AppTheme.outline,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Text(
-                      _navItems[i].label,
-                      style: GoogleFonts.inter(
-                        fontSize: 13,
-                        fontWeight: isSelected
-                            ? FontWeight.w700
-                            : FontWeight.w400,
-                        color: isSelected
-                            ? AppTheme.primary
-                            : AppTheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ]),
+              color: AppTheme.outlineVariant.withOpacity(0.12),
+            ),
+            const SizedBox(height: 8),
+            ...List.generate(_navItems.length, (i) {
+              final isSelected = context.watch<AppState>().selectedIndex == i;
+              return Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 2,
                 ),
-              ),
-            );
-          }),
-        ]),
+                child: GestureDetector(
+                  onTap: () => _onNavTap(i),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 220),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? AppTheme.primary.withOpacity(0.12)
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Row(
+                      children: [
+                        AnimatedScale(
+                          scale: isSelected ? 1.1 : 1.0,
+                          duration: const Duration(milliseconds: 220),
+                          child: Icon(
+                            _navItems[i].icon,
+                            size: 20,
+                            color: isSelected
+                                ? AppTheme.primary
+                                : AppTheme.outline,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Text(
+                          _navItems[i].label,
+                          style: GoogleFonts.inter(
+                            fontSize: 13,
+                            fontWeight: isSelected
+                                ? FontWeight.w700
+                                : FontWeight.w400,
+                            color: isSelected
+                                ? AppTheme.primary
+                                : AppTheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }),
+          ],
+        ),
       ),
     );
   }
@@ -335,8 +353,7 @@ class _NavBarButton extends StatelessWidget {
       behavior: HitTestBehavior.opaque,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 220),
-        padding:
-            const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
         decoration: BoxDecoration(
           color: isSelected
               ? AppTheme.primary.withOpacity(0.12)
@@ -346,42 +363,40 @@ class _NavBarButton extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Stack(clipBehavior: Clip.none, children: [
-              AnimatedScale(
-                scale: isSelected ? 1.15 : 1.0,
-                duration: const Duration(milliseconds: 220),
-                child: Icon(
-                  item.icon,
-                  size: 22,
-                  color: isSelected
-                      ? AppTheme.primary
-                      : AppTheme.outline,
-                ),
-              ),
-              if (hasNotification)
-                Positioned(
-                  top: -4,
-                  right: -4,
-                  child: Container(
-                    width: 8,
-                    height: 8,
-                    decoration: const BoxDecoration(
-                      color: AppTheme.error,
-                      shape: BoxShape.circle,
-                    ),
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                AnimatedScale(
+                  scale: isSelected ? 1.15 : 1.0,
+                  duration: const Duration(milliseconds: 220),
+                  child: Icon(
+                    item.icon,
+                    size: 22,
+                    color: isSelected ? AppTheme.primary : AppTheme.outline,
                   ),
                 ),
-            ]),
+                if (hasNotification)
+                  Positioned(
+                    top: -4,
+                    right: -4,
+                    child: Container(
+                      width: 8,
+                      height: 8,
+                      decoration: const BoxDecoration(
+                        color: AppTheme.error,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
             const SizedBox(height: 3),
             AnimatedDefaultTextStyle(
               duration: const Duration(milliseconds: 220),
               style: GoogleFonts.inter(
                 fontSize: 10,
-                fontWeight:
-                    isSelected ? FontWeight.w600 : FontWeight.w400,
-                color: isSelected
-                    ? AppTheme.primary
-                    : AppTheme.outline,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                color: isSelected ? AppTheme.primary : AppTheme.outline,
               ),
               child: Text(item.label),
             ),

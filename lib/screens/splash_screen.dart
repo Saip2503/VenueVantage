@@ -29,33 +29,45 @@ class _SplashScreenState extends State<SplashScreen>
   late Animation<double> _taglineOpacity;
   late Animation<Offset> _taglineSlide;
 
-  bool _navigated = false;
-  bool _animDone = false;
+  final bool _navigated = false;
+  final bool _animDone = false;
 
   @override
   void initState() {
     super.initState();
     _ctrl = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 1600));
+      vsync: this,
+      duration: const Duration(milliseconds: 1600),
+    );
 
-    _logoScale = Tween(begin: 0.5, end: 1.0).animate(CurvedAnimation(
+    _logoScale = Tween(begin: 0.5, end: 1.0).animate(
+      CurvedAnimation(
         parent: _ctrl,
-        curve: const Interval(0.0, 0.5, curve: Curves.elasticOut)));
-    _logoOpacity = Tween(begin: 0.0, end: 1.0).animate(CurvedAnimation(
+        curve: const Interval(0.0, 0.5, curve: Curves.elasticOut),
+      ),
+    );
+    _logoOpacity = Tween(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
         parent: _ctrl,
-        curve: const Interval(0.0, 0.4, curve: Curves.easeIn)));
-    _taglineOpacity = Tween(begin: 0.0, end: 1.0).animate(CurvedAnimation(
+        curve: const Interval(0.0, 0.4, curve: Curves.easeIn),
+      ),
+    );
+    _taglineOpacity = Tween(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
         parent: _ctrl,
-        curve: const Interval(0.5, 0.85, curve: Curves.easeIn)));
-    _taglineSlide =
-        Tween(begin: const Offset(0, 0.5), end: Offset.zero).animate(
-            CurvedAnimation(
-                parent: _ctrl,
-                curve: const Interval(0.5, 0.85, curve: Curves.easeOut)));
+        curve: const Interval(0.5, 0.85, curve: Curves.easeIn),
+      ),
+    );
+    _taglineSlide = Tween(begin: const Offset(0, 0.5), end: Offset.zero)
+        .animate(
+          CurvedAnimation(
+            parent: _ctrl,
+            curve: const Interval(0.5, 0.85, curve: Curves.easeOut),
+          ),
+        );
 
     _ctrl.forward();
   }
-
 
   @override
   void dispose() {
@@ -65,7 +77,6 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
       backgroundColor: AppTheme.surface,
       body: Center(
@@ -90,8 +101,11 @@ class _SplashScreenState extends State<SplashScreen>
                       ),
                     ],
                   ),
-                  child: const Icon(Icons.stadium_rounded,
-                      color: AppTheme.onPrimary, size: 52),
+                  child: const Icon(
+                    Icons.stadium_rounded,
+                    color: AppTheme.onPrimary,
+                    size: 52,
+                  ),
                 ),
               ),
             ),

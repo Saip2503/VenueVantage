@@ -21,7 +21,11 @@ class OrderHistoryScreen extends StatelessWidget {
         backgroundColor: AppTheme.surface,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppTheme.onSurface, size: 20),
+          icon: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: AppTheme.onSurface,
+            size: 20,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         centerTitle: true,
@@ -40,7 +44,9 @@ class OrderHistoryScreen extends StatelessWidget {
               stream: FirestoreService().ordersStream(user.uid),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator(color: AppTheme.primary));
+                  return const Center(
+                    child: CircularProgressIndicator(color: AppTheme.primary),
+                  );
                 }
                 if (snapshot.hasError) {
                   return _ErrorView(error: snapshot.error.toString());
@@ -49,7 +55,10 @@ class OrderHistoryScreen extends StatelessWidget {
                 if (orders.isEmpty) return const _NoOrdersView();
 
                 return ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 10,
+                  ),
                   itemCount: orders.length,
                   itemBuilder: (context, index) {
                     final order = orders[index];
@@ -69,7 +78,7 @@ class _OrderCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final dateStr = DateFormat('MMM dd, hh:mm a').format(order.time);
-    
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
@@ -97,32 +106,31 @@ class _OrderCard extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             dateStr,
-            style: GoogleFonts.inter(
-              color: AppTheme.outline,
-              fontSize: 12,
-            ),
+            style: GoogleFonts.inter(color: AppTheme.outline, fontSize: 12),
           ),
           const SizedBox(height: 12),
           const Divider(color: AppTheme.outlineVariant, thickness: 0.5),
           const SizedBox(height: 12),
-          ...order.items.map((item) => Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: Row(
-              children: [
-                Text(item.emoji, style: const TextStyle(fontSize: 16)),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    '${item.quantity}x ${item.name}',
-                    style: GoogleFonts.inter(
-                      color: AppTheme.onSurfaceVariant,
-                      fontSize: 13,
+          ...order.items.map(
+            (item) => Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Row(
+                children: [
+                  Text(item.emoji, style: const TextStyle(fontSize: 16)),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      '${item.quantity}x ${item.name}',
+                      style: GoogleFonts.inter(
+                        color: AppTheme.onSurfaceVariant,
+                        fontSize: 13,
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          )).toList(),
+          ),
           const SizedBox(height: 4),
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
@@ -155,10 +163,17 @@ class _StatusBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     Color color;
     switch (status.toLowerCase()) {
-      case 'delivered': color = AppTheme.accentGreen; break;
-      case 'placed': color = AppTheme.primary; break;
-      case 'preparing': color = AppTheme.tertiary; break;
-      default: color = AppTheme.outline;
+      case 'delivered':
+        color = AppTheme.accentGreen;
+        break;
+      case 'placed':
+        color = AppTheme.primary;
+        break;
+      case 'preparing':
+        color = AppTheme.tertiary;
+        break;
+      default:
+        color = AppTheme.outline;
     }
 
     return Container(
@@ -190,11 +205,19 @@ class _UnauthedView extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.history_rounded, size: 64, color: AppTheme.outlineVariant),
+            const Icon(
+              Icons.history_rounded,
+              size: 64,
+              color: AppTheme.outlineVariant,
+            ),
             const SizedBox(height: 24),
             Text(
               'Sign in to see your orders',
-              style: GoogleFonts.inter(color: AppTheme.onSurface, fontWeight: FontWeight.w700, fontSize: 18),
+              style: GoogleFonts.inter(
+                color: AppTheme.onSurface,
+                fontWeight: FontWeight.w700,
+                fontSize: 18,
+              ),
             ),
           ],
         ),
@@ -211,16 +234,27 @@ class _NoOrdersView extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.receipt_long_rounded, size: 64, color: AppTheme.outlineVariant),
+          const Icon(
+            Icons.receipt_long_rounded,
+            size: 64,
+            color: AppTheme.outlineVariant,
+          ),
           const SizedBox(height: 20),
           Text(
             'No orders yet',
-            style: GoogleFonts.inter(color: AppTheme.onSurface, fontWeight: FontWeight.w700, fontSize: 18),
+            style: GoogleFonts.inter(
+              color: AppTheme.onSurface,
+              fontWeight: FontWeight.w700,
+              fontSize: 18,
+            ),
           ),
           const SizedBox(height: 8),
           Text(
             'Your stadium snacking journey starts here.',
-            style: GoogleFonts.inter(color: AppTheme.onSurfaceVariant, fontSize: 14),
+            style: GoogleFonts.inter(
+              color: AppTheme.onSurfaceVariant,
+              fontSize: 14,
+            ),
           ),
         ],
       ),
@@ -233,6 +267,8 @@ class _ErrorView extends StatelessWidget {
   const _ErrorView({required this.error});
   @override
   Widget build(BuildContext context) {
-    return Center(child: Text('Error: $error', style: const TextStyle(color: Colors.white)));
+    return Center(
+      child: Text('Error: $error', style: const TextStyle(color: Colors.white)),
+    );
   }
 }

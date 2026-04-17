@@ -557,6 +557,7 @@ class _POIMarkerState extends State<_POIMarker>
     super.dispose();
   }
 
+  @override
   Widget build(BuildContext context) {
     Color getGlowColor() {
       if (widget.poi.crowdLevel > 65) return const Color(0xFFf87171); // Red
