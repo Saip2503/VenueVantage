@@ -50,7 +50,8 @@ class _OrderScreenState extends State<OrderScreen> {
             ],
           ),
           if (_showCart) _buildCartOverlay(context, auth.user?.uid),
-          _buildCartFAB(context),
+          // Only show the View Cart FAB if the cart logic is NOT already expanded
+          if (!_showCart) _buildCartFAB(context),
         ],
       ),
     );
@@ -597,20 +598,20 @@ class _CartOverlay extends StatelessWidget {
           child: Align(
             alignment: Alignment.bottomCenter,
             child: ClipRRect(
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
               child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+                filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
                 child: Container(
                   constraints: BoxConstraints(
-                    maxHeight: MediaQuery.of(context).size.height * 0.75,
+                    maxHeight: MediaQuery.of(context).size.height * 0.85,
                   ),
-                  padding: const EdgeInsets.all(24),
+                  padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.05),
+                    color: AppTheme.surface.withOpacity(0.92),
                     borderRadius:
-                        const BorderRadius.vertical(top: Radius.circular(4)),
+                        const BorderRadius.vertical(top: Radius.circular(24)),
                     border: Border.all(
-                      color: AppTheme.outlineVariant.withOpacity(0.15),
+                      color: AppTheme.outlineVariant.withOpacity(0.20),
                     ),
                   ),
                   child: Consumer<AppState>(
