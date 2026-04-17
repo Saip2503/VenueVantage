@@ -55,8 +55,8 @@ During development, several key assumptions were made to scope the project effec
 - **Consistent Styling:** A unified `AppTheme` class manages all colors, gradients, and radiuses globally, making sweeping design changes trivial.
 - **Thorough Documentation:** Public classes, methods, and complex widget trees include DartDoc `///` documentation for seamless developer onboarding.
 
-### 2. Security (Safe and Responsible Implementation)
-- **Environment Variables:** API keys (like Google Maps/Places) are strictly kept out of source code and injected safely via `flutter_dotenv` (`.env`).
+### 2. Security (Follows safe practices and avoids common vulnerabilities)
+- **Environment Variables:** API keys (like Google Maps/Places) are strictly kept out of source code and injected safely via `flutter_dotenv` (`.env`), avoiding the common vulnerability of leaking credentials on GitHub.
 - **Input Sanitization:** The onboarding forms (Seat Selection) strictly enforce active Regex validation ensuring alphanumeric input, preventing nasty data injections.
 - **Fail-Safe API Wrappers:** All Network/API requests are wrapped in robust `try/catch` blocks. If Google Cloud calls fail (or quotas are exceeded), the UI gracefully falls back to cached UI mock data without application crashes. 
 
