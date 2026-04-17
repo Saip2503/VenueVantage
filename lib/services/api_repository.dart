@@ -1,6 +1,7 @@
 import 'maps_service.dart';
 import 'places_service.dart';
 import 'weather_service.dart';
+import '../data/venue_data.dart';
 
 class ApiRepository {
   final MapsService _maps = MapsService();
@@ -12,7 +13,7 @@ class ApiRepository {
   }
 
   Future<List<dynamic>> getNearbyPlaces() async {
-    return await _places.getNearby("stadium");
+    return await _places.getNearby("${currentVenue.lat},${currentVenue.lng}");
   }
 
   Future<Map<String, dynamic>> getWeather() async {
