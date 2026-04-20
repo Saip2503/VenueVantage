@@ -12,7 +12,9 @@ const String kDefaultVenueId = 'apex-arena';
 /// All reads are real-time streams. Writes are fire-and-forget Futures.
 /// Falls back to mock data if Firestore is unavailable (offline mode).
 class FirestoreService {
-  final FirebaseFirestore _db = FirebaseFirestore.instance;
+  final FirebaseFirestore _db;
+
+  FirestoreService({FirebaseFirestore? db}) : _db = db ?? FirebaseFirestore.instance;
 
   // ── Venue collection refs ──────────────────────────────────────────────────
   CollectionReference<Map<String, dynamic>> _venue(String sub) =>

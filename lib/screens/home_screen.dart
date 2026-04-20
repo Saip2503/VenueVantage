@@ -14,18 +14,29 @@ import 'assistant_screen.dart';
 /// This screen aggregates data from [AppState] including dynamic POIs,
 /// AI assistant navigation, and live crowd density stats to provide
 /// a unified stadium experience for the user.
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        context.read<AppState>().fetchDynamicData();
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     final state = context.watch<AppState>();
     final isDark = state.isDarkMode;
     final isLoading = state.isLoading;
-    
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<AppState>().fetchDynamicData();
-    });
 
     return SafeArea(
       child: RefreshIndicator(

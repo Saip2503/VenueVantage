@@ -77,9 +77,13 @@ enum OrderTrackingStep { placed, preparing, onTheWay, delivered }
 
 class AppState extends ChangeNotifier {
   final FirestoreService _fs;
+  final ApiRepository _api;
 
-  AppState({FirestoreService? firestoreService}) 
-      : _fs = firestoreService ?? FirestoreService() {
+  AppState({
+    FirestoreService? firestoreService,
+    ApiRepository? apiRepository,
+  }) : _fs = firestoreService ?? FirestoreService(),
+       _api = apiRepository ?? ApiRepository() {
     _loadPrefs();
     // Wrap in try-catch in case Firestore isn't initialized during tests
     try {
@@ -436,7 +440,7 @@ class AppState extends ChangeNotifier {
   String get temperature => _temperature;
   List<dynamic> get places => _places;
 
-  final ApiRepository _api = ApiRepository();
+
   bool _isFetchingDynamic = false;
   Future<void> fetchDynamicData() async {
     if (_isFetchingDynamic) return;
@@ -459,7 +463,7 @@ class AppState extends ChangeNotifier {
       _eta = bestExitResult['durationText'];
 
       // Weather
-      _temperature = "${(results[1] as Map<String, dynamic>)['temp']}°";
+      _temperature = "${(results[1] as Map<String, dynamic>)['temp']}°C";
 
       // Places
       _places = results[2] as List<dynamic>;

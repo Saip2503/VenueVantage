@@ -201,6 +201,7 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
   }
 
   void _confirm() {
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
     final sectionRaw = _sectionCtrl.text.trim();
     final rowRaw = _rowCtrl.text.trim();
     final seatRaw = _seatCtrl.text.trim();

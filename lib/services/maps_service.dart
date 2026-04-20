@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../models/venue.dart';
@@ -40,7 +42,7 @@ class MapsService {
           "durationText": route.durationText,
         });
       } catch (e) {
-        print("Error fetching directions for ${exit['name']}: $e");
+        debugPrint("Error fetching directions for ${exit['name']}: $e");
       }
     }
 
@@ -61,7 +63,7 @@ class MapsService {
     required String origin,
     required String destination,
   }) async {
-    if (_apiKey == null || _apiKey!.isEmpty) {
+    if (_apiKey == null || _apiKey.isEmpty) {
       // Return mock data if no API key
       return DirectionResult(
         distanceText: '1.2 km',
@@ -98,8 +100,7 @@ class MapsService {
         distanceText: leg['distance']['text'],
         durationText: leg['duration']['text'],
         durationValue: leg['duration']['value'],
-        polylinePoints:
-            _decodePolyline(route['overview_polyline']['points']),
+        polylinePoints: _decodePolyline(route['overview_polyline']['points']),
       );
     } catch (e) {
       // Fallback to mock on error to prevent app crash in demo
@@ -144,10 +145,7 @@ class MapsService {
       int dlng = ((result & 1) != 0 ? ~(result >> 1) : (result >> 1));
       lng += dlng;
 
-      points.add({
-        "lat": lat / 1E5,
-        "lng": lng / 1E5,
-      });
+      points.add({"lat": lat / 1E5, "lng": lng / 1E5});
     }
 
     return points;

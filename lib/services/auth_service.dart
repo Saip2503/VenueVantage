@@ -5,10 +5,10 @@ import 'package:google_sign_in/google_sign_in.dart';
 /// Handles all Firebase Auth interactions.
 /// Supports Google OAuth (web popup + native credential flow) and anonymous sign-in.
 class AuthService {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseAuth _auth;
   late final GoogleSignIn _googleSignIn;
   
-  AuthService() {
+  AuthService({FirebaseAuth? auth}) : _auth = auth ?? FirebaseAuth.instance {
     if (!kIsWeb) {
       _googleSignIn = GoogleSignIn();
     }
@@ -16,7 +16,6 @@ class AuthService {
 
   // ── Reactive stream ────────────────────────────────────────────────────────
   Stream<User?> get userStream => _auth.authStateChanges();
-  User? get currentUser => _auth.currentUser;
 
   // ── Google Sign-In ─────────────────────────────────────────────────────────
   Future<UserCredential?> signInWithGoogle() async {
@@ -55,6 +54,12 @@ class AuthService {
   }
 
   // ── Sign Out ────────────────────────────────────────────────────────────────
+  Future<void> updateProfile({String? displayName}) async {
+    await _auth.currentUser?.updateDisplayName(displayName);
+  }
+
+  User? get currentUser => _auth.currentUser;
+
   Future<void> signOut() async {
     await Future.wait([
       _auth.signOut(),

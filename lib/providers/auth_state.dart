@@ -90,9 +90,20 @@ class AuthStateProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> updateDisplayName(String name) async {
+    try {
+      await _service.updateProfile(displayName: name);
+      // Firebase doesn't always trigger the stream for local profile updates immediately
+      await _user?.reload();
+      _user = FirebaseAuth.instance.currentUser;
+      notifyListeners();
+    } catch (e) {
+      debugPrint("Error updating profile display name: $e");
+    }
+  }
+
   Future<void> signOut() async {
     await _service.signOut();
-    // _onAuthChange will be called automatically by the stream
   }
 
   void clearError() {

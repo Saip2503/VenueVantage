@@ -1,7 +1,7 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-
 import '../providers/app_state.dart';
 import '../providers/auth_state.dart';
 import '../theme/app_theme.dart';
@@ -11,18 +11,21 @@ class SettingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final state = context.watch<AppState>();
+    final auth = context.watch<AuthStateProvider>();
+
     return Scaffold(
       backgroundColor: AppTheme.surface,
       appBar: AppBar(
-        backgroundColor: AppTheme.surface,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
         title: Text(
           'Settings',
           style: GoogleFonts.inter(
             color: AppTheme.onSurface,
-            fontWeight: FontWeight.w700,
-            fontSize: 16,
+            fontWeight: FontWeight.w800,
+            fontSize: 18,
           ),
         ),
         leading: IconButton(
@@ -34,94 +37,101 @@ class SettingsScreen extends StatelessWidget {
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: Consumer2<AppState, AuthStateProvider>(
-        builder: (ctx, state, auth, _) {
-          return ListView(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-            children: [
-              _buildAccountHeader(auth),
-              const SizedBox(height: 32),
-              _SectionLabel('PREFERENCES'),
-              const SizedBox(height: 12),
-              _buildPrefsCard(state),
-              const SizedBox(height: 32),
-              _SectionLabel('SECURITY'),
-              const SizedBox(height: 12),
-              _buildSecurityCard(),
-              const SizedBox(height: 32),
-              _SectionLabel('SUPPORT & LEGAL'),
-              const SizedBox(height: 12),
-              _buildSupportCard(context),
-              const SizedBox(height: 40),
-              _buildSignOutButton(context, auth),
-              const SizedBox(height: 48),
-              _buildVersionInfo(),
-              const SizedBox(height: 20),
-            ],
-          );
-        },
+      body: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildUserHeader(context, auth),
+            const SizedBox(height: 32),
+            _sectionTitle('Preferences'),
+            _buildPrefsCard(state),
+            const SizedBox(height: 24),
+            _sectionTitle('Security'),
+            _buildSecurityCard(),
+            const SizedBox(height: 24),
+            _sectionTitle('Support & Legal'),
+            _buildSupportCard(),
+            const SizedBox(height: 48),
+            _buildSignOutButton(context, auth),
+            const SizedBox(height: 32),
+            _buildVersionInfo(),
+            const SizedBox(height: 40),
+          ],
+        ),
       ),
     );
   }
 
-  // ── Account Header ────────────────────────────────────────────────────────
-  Widget _buildAccountHeader(AuthStateProvider auth) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppTheme.surfaceContainer,
-        borderRadius: BorderRadius.circular(16),
+  Widget _sectionTitle(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 4, bottom: 12),
+      child: Text(
+        title.toUpperCase(),
+        style: GoogleFonts.inter(
+          color: AppTheme.outline,
+          fontWeight: FontWeight.w800,
+          fontSize: 11,
+          letterSpacing: 1.2,
+        ),
       ),
-      child: Row(
-        children: [
-          Container(
-            width: 56,
-            height: 56,
-            decoration: const BoxDecoration(
-              gradient: AppTheme.ctaGradient,
-              shape: BoxShape.circle,
-            ),
-            child: Center(
-              child: Text(
-                auth.initials,
+    );
+  }
+
+  Widget _buildUserHeader(BuildContext context, AuthStateProvider auth) {
+    return Row(
+      children: [
+        _buildAvatar(auth),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                auth.displayName,
                 style: GoogleFonts.inter(
-                  color: AppTheme.onPrimary,
-                  fontWeight: FontWeight.w800,
-                  fontSize: 18,
+                  color: AppTheme.onSurface,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 17,
                 ),
               ),
-            ),
+              Text(
+                auth.email ?? (auth.isAnonymous ? 'Guest Account' : 'Member'),
+                style: GoogleFonts.inter(color: AppTheme.outline, fontSize: 13),
+              ),
+            ],
           ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  auth.displayName,
-                  style: GoogleFonts.inter(
-                    color: AppTheme.onSurface,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 17,
-                  ),
-                ),
-                Text(
-                  auth.email ?? (auth.isAnonymous ? 'Guest Account' : 'Member'),
-                  style: GoogleFonts.inter(
-                    color: AppTheme.outline,
-                    fontSize: 13,
-                  ),
-                ),
-              ],
-            ),
+        ),
+        _ActionChip(
+          label: 'EDIT',
+          onTap: () => _showEditProfileDialog(context, auth),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAvatar(AuthStateProvider auth) {
+    return Container(
+      width: 56,
+      height: 56,
+      decoration: const BoxDecoration(
+        gradient: AppTheme.ctaGradient,
+        shape: BoxShape.circle,
+      ),
+      child: Center(
+        child: Text(
+          auth.initials,
+          style: GoogleFonts.inter(
+            color: AppTheme.onPrimary,
+            fontWeight: FontWeight.w800,
+            fontSize: 18,
           ),
-          _ActionChip(label: 'EDIT', onTap: () {}),
-        ],
+        ),
       ),
     );
   }
 
-  // ── Preferences Card ──────────────────────────────────────────────────────
   Widget _buildPrefsCard(AppState state) {
     return Container(
       decoration: BoxDecoration(
@@ -141,24 +151,23 @@ class SettingsScreen extends StatelessWidget {
           _ToggleTile(
             icon: Icons.notifications_active_rounded,
             title: 'Push Notifications',
-            subtitle: 'Crowd and event alerts',
+            subtitle: 'Live game alerts & food updates',
             value: state.notificationsEnabled,
-            onChanged: (v) => state.toggleNotifications(v),
+            onChanged: state.toggleNotifications,
           ),
           _divider(),
           _ToggleTile(
             icon: Icons.vibration_rounded,
             title: 'Haptic Feedback',
-            subtitle: 'Tactile app responses',
+            subtitle: 'Tactile response on interaction',
             value: state.hapticsEnabled,
-            onChanged: (v) => state.toggleHaptics(v),
+            onChanged: state.toggleHaptics,
           ),
         ],
       ),
     );
   }
 
-  // ── Security Card ─────────────────────────────────────────────────────────
   Widget _buildSecurityCard() {
     return Container(
       decoration: BoxDecoration(
@@ -167,29 +176,25 @@ class SettingsScreen extends StatelessWidget {
       ),
       child: Column(
         children: [
-          _MenuTile(
+          _ToggleTile(
             icon: Icons.fingerprint_rounded,
             title: 'Biometric Lock',
-            subtitle: 'Require FaceID/Fingerprint',
-            trailing: Switch(
-              value: false,
-              onChanged: (_) {},
-              activeColor: AppTheme.primary,
-            ),
+            subtitle: 'Secure app with FaceID/TouchID',
+            value: false,
+            onChanged: (v) {},
           ),
           _divider(),
-          _MenuTile(
-            icon: Icons.lock_outline_rounded,
+          const _MenuTile(
+            icon: Icons.privacy_tip_rounded,
             title: 'Privacy Settings',
-            onTap: () {},
+            subtitle: 'Manage data sharing & tracking',
           ),
         ],
       ),
     );
   }
 
-  // ── Support Card ──────────────────────────────────────────────────────────
-  Widget _buildSupportCard(BuildContext context) {
+  Widget _buildSupportCard() {
     return Container(
       decoration: BoxDecoration(
         color: AppTheme.surfaceContainer,
@@ -197,22 +202,22 @@ class SettingsScreen extends StatelessWidget {
       ),
       child: Column(
         children: [
-          _MenuTile(
-            icon: Icons.help_outline_rounded,
+          const _MenuTile(
+            icon: Icons.help_center_rounded,
             title: 'Help Center',
-            onTap: () {},
+            subtitle: 'FAQs and venue guides',
           ),
           _divider(),
-          _MenuTile(
-            icon: Icons.contact_support_outlined,
-            title: 'Contact Support',
-            onTap: () {},
+          const _MenuTile(
+            icon: Icons.chat_bubble_rounded,
+            title: 'Contact Concierge',
+            subtitle: 'Direct support for elite members',
           ),
           _divider(),
-          _MenuTile(
-            icon: Icons.policy_outlined,
-            title: 'Privacy Policy',
-            onTap: () {},
+          const _MenuTile(
+            icon: Icons.description_rounded,
+            title: 'Legal & Privacy',
+            subtitle: 'Terms of service and policies',
           ),
         ],
       ),
@@ -239,7 +244,11 @@ class SettingsScreen extends StatelessWidget {
         ),
         child: Text(
           auth.isAnonymous ? 'Exit Guest Mode' : 'Sign Out',
-          style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 15),
+          style: GoogleFonts.inter(
+            color: AppTheme.error,
+            fontWeight: FontWeight.w700,
+            fontSize: 15,
+          ),
         ),
       ),
     );
@@ -248,13 +257,15 @@ class SettingsScreen extends StatelessWidget {
   Widget _buildVersionInfo() {
     return Column(
       children: [
-        Text(
-          'VenueVantage Pro',
-          style: GoogleFonts.inter(
-            color: AppTheme.onSurface,
-            fontWeight: FontWeight.w800,
-            fontSize: 14,
-            letterSpacing: 0.5,
+        Center(
+          child: Text(
+            'VENUEVANTAGE',
+            style: GoogleFonts.inter(
+              color: AppTheme.onSurface.withOpacity(0.3),
+              fontWeight: FontWeight.w900,
+              fontSize: 10,
+              letterSpacing: 2.0,
+            ),
           ),
         ),
         const SizedBox(height: 4),
@@ -271,30 +282,76 @@ class SettingsScreen extends StatelessWidget {
     color: AppTheme.outlineVariant.withOpacity(0.05),
     indent: 56,
   );
-}
 
-// ── Shared sub-widgets ────────────────────────────────────────────────────────
+  void _showEditProfileDialog(BuildContext context, AuthStateProvider auth) {
+    if (auth.isAnonymous) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please sign in to edit your profile.')),
+      );
+      return;
+    }
 
-class _SectionLabel extends StatelessWidget {
-  final String text;
-  const _SectionLabel(this.text);
-
-  @override
-  Widget build(BuildContext context) {
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Text(
-        text,
-        style: GoogleFonts.inter(
-          color: AppTheme.outline,
-          fontSize: 10,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 0.05 * 10,
+    final controller = TextEditingController(text: auth.displayName);
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppTheme.surfaceContainer,
+        title: Text(
+          'Edit Profile',
+          style: GoogleFonts.inter(color: AppTheme.onSurface),
         ),
+        content: TextField(
+          controller: controller,
+          style: GoogleFonts.inter(color: AppTheme.onSurface),
+          autofocus: true,
+          decoration: InputDecoration(
+            labelText: 'Display Name',
+            labelStyle: TextStyle(color: AppTheme.outline),
+            enabledBorder: UnderlineInputBorder(
+              borderSide: BorderSide(color: AppTheme.outlineVariant),
+            ),
+            focusedBorder: const UnderlineInputBorder(
+              borderSide: BorderSide(color: AppTheme.primary),
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              try {
+                final name = controller.text.trim();
+                if (name.isEmpty) return;
+
+                // Security: validate name format
+                final nameRegex = RegExp(r"^[a-zA-Z\s']{2,30}$");
+                if (!nameRegex.hasMatch(name)) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Invalid name. Use 2-30 letters only.'),
+                    ),
+                  );
+                  return;
+                }
+
+                await auth.updateDisplayName(name);
+                if (context.mounted) Navigator.pop(ctx);
+              } catch (e) {
+                debugPrint("Error updating profile: $e");
+              }
+            },
+            child: const Text('Save'),
+          ),
+        ],
       ),
     );
   }
 }
+
+// ── Shared sub-widgets ────────────────────────────────────────────────────────
 
 class _ActionChip extends StatelessWidget {
   final String label;
@@ -395,50 +452,32 @@ class _ToggleTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: AppTheme.primary.withOpacity(0.12),
-              borderRadius: BorderRadius.circular(4),
-            ),
-            child: Icon(icon, color: AppTheme.primary, size: 18),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: GoogleFonts.inter(
-                    color: AppTheme.onSurface,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
-                  ),
-                ),
-                Text(
-                  subtitle,
-                  style: GoogleFonts.inter(
-                    color: AppTheme.outline,
-                    fontSize: 11,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Switch(
-            value: value,
-            onChanged: onChanged,
-            activeColor: AppTheme.primaryContainer,
-            activeTrackColor: AppTheme.primary.withOpacity(0.35),
-            inactiveThumbColor: AppTheme.outline,
-            inactiveTrackColor: AppTheme.surfaceContainerHighest,
-          ),
-        ],
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      leading: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: AppTheme.primary.withOpacity(0.08),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Icon(icon, color: AppTheme.primary, size: 20),
+      ),
+      title: Text(
+        title,
+        style: GoogleFonts.inter(
+          color: AppTheme.onSurface,
+          fontWeight: FontWeight.w600,
+          fontSize: 14,
+        ),
+      ),
+      subtitle: Text(
+        subtitle,
+        style: GoogleFonts.inter(color: AppTheme.outline, fontSize: 11),
+      ),
+      trailing: Switch.adaptive(
+        value: value,
+        onChanged: onChanged,
+        activeColor: AppTheme.primary,
       ),
     );
   }
