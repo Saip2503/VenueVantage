@@ -8,6 +8,7 @@ import '../providers/auth_state.dart';
 import '../providers/app_state.dart';
 import '../services/firestore_service.dart';
 import '../theme/app_theme.dart';
+import '../utils/error_utils.dart';
 
 class OrderHistoryScreen extends StatelessWidget {
   const OrderHistoryScreen({super.key});
@@ -63,7 +64,7 @@ class OrderHistoryScreen extends StatelessWidget {
                         );
                       }
                       if (snapshot.hasError) {
-                        return _ErrorView(error: snapshot.error.toString());
+                        return _ErrorView(error: ErrorUtils.getFriendlyMessage(snapshot.error));
                       }
                       final orders = snapshot.data ?? [];
                       if (orders.isEmpty && appState.activeOrderId == null) {
@@ -383,7 +384,14 @@ class _ErrorView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: Text('Error: $error', style: const TextStyle(color: Colors.white)),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Text(
+          error,
+          textAlign: TextAlign.center,
+          style: GoogleFonts.inter(color: AppTheme.error, fontSize: 14),
+        ),
+      ),
     );
   }
 }

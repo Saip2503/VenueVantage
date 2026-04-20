@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
+import '../utils/error_utils.dart';
 
 enum AuthStatus { loading, authenticated, anonymous, unauthenticated }
 
@@ -71,7 +72,7 @@ class AuthStateProvider extends ChangeNotifier {
       final cred = await _service.signInWithGoogle();
       return cred != null;
     } catch (e) {
-      _errorMessage = e.toString();
+      _errorMessage = ErrorUtils.getFriendlyMessage(e);
       notifyListeners();
       return false;
     }
@@ -84,7 +85,7 @@ class AuthStateProvider extends ChangeNotifier {
       await _service.signInAnonymously();
       return true;
     } catch (e) {
-      _errorMessage = e.toString();
+      _errorMessage = ErrorUtils.getFriendlyMessage(e);
       notifyListeners();
       return false;
     }

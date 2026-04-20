@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 
 import '../providers/app_state.dart';
 import '../theme/app_theme.dart';
+import '../utils/error_utils.dart';
 
 class AssistantScreen extends StatefulWidget {
   const AssistantScreen({super.key});
@@ -127,7 +128,7 @@ class _AssistantScreenState extends State<AssistantScreen> {
           }
           return;
         } catch (fallbackErr) {
-           _showError("Model not available in your region: $fallbackErr");
+           _showError(fallbackErr);
            return;
         }
       }
@@ -138,7 +139,10 @@ class _AssistantScreenState extends State<AssistantScreen> {
   void _showError(dynamic error) {
     if (mounted) {
       setState(() {
-        _messages.add({'role': 'model', 'text': 'Oops! Something went wrong connecting to the AI. ($error)'});
+        _messages.add({
+          'role': 'model',
+          'text': 'Oops! ${ErrorUtils.getFriendlyMessage(error)}'
+        });
         _isLoading = false;
       });
       _scrollToBottom();
