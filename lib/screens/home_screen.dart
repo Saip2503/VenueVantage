@@ -53,6 +53,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   _buildCrowdTrendChart(context, state),
                   _buildAssistantSection(context),
                   _buildQuickActions(context, isDark),
+                  _buildRealTimeCoordination(context, state),
                   _buildRouteRecommendation(context, state),
                   _buildExitCountdown(context, state),
                 ],
@@ -660,6 +661,77 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
               ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── Real-Time Coordination ──────────────────────────────────────────────────
+  Widget _buildRealTimeCoordination(BuildContext context, AppState state) {
+    return SliverToBoxAdapter(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _SectionTitle('Friends & Group Meetups'),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: AppTheme.surfaceContainerHigh,
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(
+                  color: AppTheme.accentBlue.withOpacity(0.2),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppTheme.accentBlue.withOpacity(0.15),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.diversity_3_rounded,
+                      color: AppTheme.accentBlue,
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Coordinate in Real-Time',
+                          style: GoogleFonts.inter(
+                            color: AppTheme.textPrimary,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 16,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Drop pinged locations or set a group meetup point to find your party.',
+                          style: GoogleFonts.inter(
+                            color: AppTheme.textMuted,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    color: AppTheme.textMuted,
+                    size: 16,
+                  ),
+                ],
+              ),
             ),
           ],
         ),
